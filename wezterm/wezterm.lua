@@ -284,11 +284,8 @@ config.colors = {
     },
   },
 }
-config.font = wezterm.font("JetBrains Mono", {
-  weight   = "Regular",
-  -- Ligatures: => --> != === ~> |> && || >= <=
-  harfbuzz_features = { "calt=1", "clig=1", "liga=1" },
-})
+config.font             = wezterm.font("JetBrains Mono", { weight = "Regular" })
+config.harfbuzz_features = { "calt=1", "clig=1", "liga=1" }
 config.font_size         = 13.0
 config.line_height       = 1.1
 config.use_fancy_tab_bar = false
