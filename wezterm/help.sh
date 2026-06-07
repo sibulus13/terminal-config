@@ -5,13 +5,15 @@ cat << 'EOF'
 ║   WezTerm  ·  LEADER = ALT+Z  (1.5 s)           ║
 ╠══════════════════════════════════════════════════╣
 ║  WORKSPACES                                      ║
+║  ALT + 0           launcher / help               ║
 ║  ALT + 1–7         open / switch workspace       ║
+║  ALT + ← / →       cycle prev / next workspace   ║
 ║  ALT+Z  w          fuzzy picker (by name)        ║
-║  ALT+Z  [ / ]      cycle prev / next             ║
 ╠══════════════════════════════════════════════════╣
 ║  TABS                                            ║
-║  CTRL+ALT 1–4      jump to tab                  ║
-║  CTRL+SHIFT H / L  prev / next tab               ║
+║  CTRL+Tab          next tab                      ║
+║  CTRL+SHIFT+Tab    prev tab                      ║
+║  CTRL+ALT 1–4      jump to tab by number         ║
 ║  CTRL+SHIFT T      new tab (same dir)            ║
 ║  CTRL+SHIFT W      close tab                     ║
 ╠══════════════════════════════════════════════════╣

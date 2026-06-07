@@ -9,6 +9,16 @@ local PROJECTS    = dofile(CFG_DIR .. "/projects.lua")
 
 local BASH = "C:/Program Files/Git/bin/bash.exe"
 
+-- Default split layout applied when a tab's layout field is nil.
+-- Override per-tab in projects.lua with layout = "vsplit"|"hsplit"|"none".
+local DEFAULT_LAYOUTS = {
+  agent = "vsplit",   -- two side-by-side panes
+  dev   = "hsplit",   -- primary top, secondary bottom
+  cmd   = "hsplit",
+  test  = "hsplit",
+  sys   = "hsplit",
+}
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Session state helpers
 -- Read: dofile the auto-generated state table (or return nil if missing/invalid)
@@ -123,6 +133,20 @@ local function workspace_exists(id)
   return false
 end
 
+-- Apply pane split to a freshly spawned tab based on layout field.
+local function apply_split(tab, layout_override, tab_title, cwd)
+  local layout = layout_override
+  if layout == nil then
+    layout = DEFAULT_LAYOUTS[tab_title]
+  end
+  if not layout or layout == "none" then return end
+
+  local direction = layout == "vsplit" and "Right" or "Down"
+  tab:active_pane():split({ direction = direction, cwd = cwd, args = { BASH, "-l" } })
+  -- Return focus to the first (main) pane
+  tab:active_pane():activate()
+end
+
 local function open_project(proj_id)
   return wezterm.action_callback(function(window, pane)
     if workspace_exists(proj_id) then
@@ -150,6 +174,7 @@ local function open_project(proj_id)
       args      = t1_args,
     })
     tab:set_title(t1.title)
+    apply_split(tab, t1.layout, t1.title, proj.cwd)
 
     for j = 2, #proj.tabs do
       local t    = proj.tabs[j]
@@ -160,6 +185,7 @@ local function open_project(proj_id)
       end
       local new_tab, _ = win:spawn_tab({ cwd = proj.cwd, args = args })
       new_tab:set_title(t.title)
+      apply_split(new_tab, t.layout, t.title, proj.cwd)
     end
 
     tab:activate()
@@ -257,7 +283,7 @@ config.harfbuzz_features = { "calt=1", "clig=1", "liga=1" }
 config.font_size         = 13.0
 config.line_height       = 1.1
 config.use_fancy_tab_bar = false
-config.tab_bar_at_bottom = true
+config.tab_bar_at_bottom = false
 config.tab_max_width     = 22
 config.show_new_tab_button_in_tab_bar = false
 config.window_padding    = { left = 6, right = 6, top = 4, bottom = 4 }
@@ -437,15 +463,19 @@ config.keys = {
     },
   },
 
-  -- ── Workspace: direct ALT+1-7, no chord needed ───────────────────────────
-  { key = "1", mods = "ALT", action = open_project(PROJECTS[1].id) },
-  { key = "2", mods = "ALT", action = open_project(PROJECTS[2].id) },
-  { key = "3", mods = "ALT", action = open_project(PROJECTS[3].id) },
-  { key = "4", mods = "ALT", action = open_project(PROJECTS[4].id) },
-  { key = "5", mods = "ALT", action = open_project(PROJECTS[5].id) },
-  { key = "6", mods = "ALT", action = open_project(PROJECTS[6].id) },
-  { key = "7", mods = "ALT", action = open_project(PROJECTS[7].id) },
-  -- Fuzzy picker for when you want to browse by name
+  -- ── Workspace: ALT+0-7 (0 = launcher/help, 1-7 = projects) ──────────────
+  { key = "0",    mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
+  { key = "1",    mods = "ALT", action = open_project(PROJECTS[1].id) },
+  { key = "2",    mods = "ALT", action = open_project(PROJECTS[2].id) },
+  { key = "3",    mods = "ALT", action = open_project(PROJECTS[3].id) },
+  { key = "4",    mods = "ALT", action = open_project(PROJECTS[4].id) },
+  { key = "5",    mods = "ALT", action = open_project(PROJECTS[5].id) },
+  { key = "6",    mods = "ALT", action = open_project(PROJECTS[6].id) },
+  { key = "7",    mods = "ALT", action = open_project(PROJECTS[7].id) },
+  -- Cycle workspaces with ALT+Left/Right
+  { key = "LeftArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
+  { key = "RightArrow", mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
+  -- Fuzzy picker for browsing by name
   {
     key = "w", mods = "LEADER",
     action = act.InputSelector {
@@ -457,16 +487,16 @@ config.keys = {
       end),
     },
   },
-  { key = "[", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
-  { key = "]", mods = "LEADER", action = act.SwitchWorkspaceRelative(1)  },
 
   -- ── Tab navigation ────────────────────────────────────────────────────────
+  -- CTRL+Tab / CTRL+SHIFT+Tab — browser-familiar, no terminal conflict
+  { key = "Tab",        mods = "CTRL",       action = act.ActivateTabRelative(1)  },
+  { key = "Tab",        mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+  -- CTRL+ALT+1-4 for direct tab jump
   { key = "1", mods = "CTRL|ALT",   action = act.ActivateTab(0) },
   { key = "2", mods = "CTRL|ALT",   action = act.ActivateTab(1) },
   { key = "3", mods = "CTRL|ALT",   action = act.ActivateTab(2) },
   { key = "4", mods = "CTRL|ALT",   action = act.ActivateTab(3) },
-  { key = "h", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
-  { key = "l", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(1)  },
   { key = "t", mods = "CTRL|SHIFT", action = act.SpawnTab "CurrentPaneDomain" },
   { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab { confirm = true } },
 
