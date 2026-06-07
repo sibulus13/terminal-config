@@ -265,17 +265,35 @@ config.audible_bell      = "Disabled"
 config.default_prog      = { BASH, "-l" }
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Status bar: workspace name + clock
+-- Status bar: persistent hint (left) + workspace + clock (right)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 wezterm.on("update-right-status", function(window, _pane)
   local ws   = window:active_workspace()
   local time = wezterm.strftime "%H:%M"
+
+  window:set_left_status(wezterm.format({
+    { Foreground = { Color = "#6b3080" } },
+    { Text = "  ALT+Z → " },
+    { Foreground = { Color = "#c4185c" } },
+    { Text = "w" },
+    { Foreground = { Color = "#6b3080" } },
+    { Text = " picker  " },
+    { Foreground = { Color = "#c4185c" } },
+    { Text = "1-7" },
+    { Foreground = { Color = "#6b3080" } },
+    { Text = " workspace  " },
+    { Foreground = { Color = "#c4185c" } },
+    { Text = "?" },
+    { Foreground = { Color = "#6b3080" } },
+    { Text = " keys  " },
+  }))
+
   window:set_right_status(wezterm.format({
     { Attribute = { Intensity = "Bold" } },
-    { Foreground = { Color = "#7aa2f7" } },
+    { Foreground = { Color = "#c4185c" } },
     { Text = "  " .. ws },
-    { Foreground = { Color = "#565f89" } },
+    { Foreground = { Color = "#6b3080" } },
     { Text = "  " .. time .. "  " },
   }))
 end)
@@ -300,10 +318,10 @@ end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Key bindings
--- LEADER = CTRL+SPACE  (1.5 s window for the chord key)
+-- LEADER = ALT+Z  (1.5 s window — left-hand only, no OS conflicts)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 1500 }
+config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 1500 }
 
 -- Build workspace-switcher choices list at config load time
 local ws_choices = {}
@@ -320,9 +338,9 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 local LEGEND = {
-  { keys = "LEADER  w",         desc = "Open project workspace (fuzzy picker)" },
-  { keys = "LEADER  1-7",       desc = "Jump directly to project 1–7" },
-  { keys = "LEADER  [ / ]",     desc = "Cycle workspaces prev / next" },
+  { keys = "ALT+Z  w",          desc = "Open project workspace (fuzzy picker)" },
+  { keys = "ALT+Z  1-7",        desc = "Jump directly to project 1–7" },
+  { keys = "ALT+Z  [ / ]",      desc = "Cycle workspaces prev / next" },
   { keys = "──────────────────────", desc = "─── Tabs ───────────────────────" },
   { keys = "CTRL+ALT  1-4",     desc = "Jump to tab 1–4 in current workspace" },
   { keys = "CTRL+SHIFT  H / L", desc = "Previous / next tab" },

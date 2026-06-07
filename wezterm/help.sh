@@ -2,7 +2,7 @@
 printf '\e[35;1m\n'
 cat << 'EOF'
 ╔══════════════════════════════════════════════════╗
-║   WezTerm  ·  LEADER = CTRL+SPACE  (1.5 s)      ║
+║   WezTerm  ·  LEADER = ALT+Z  (1.5 s)           ║
 ╠══════════════════════════════════════════════════╣
 ║  WORKSPACES                                      ║
 ║  LEADER w          fuzzy workspace picker        ║
