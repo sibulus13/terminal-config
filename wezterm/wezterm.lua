@@ -182,7 +182,64 @@ end)
 
 local config = wezterm.config_builder()
 
-config.color_scheme      = "Tokyo Night"
+-- ── Crimson Noir — custom palette ────────────────────────────────────────────
+-- To swap back to a built-in: comment out config.colors and set config.color_scheme instead.
+config.colors = {
+  -- Base layer
+  background    = "#0e0014",  -- purple-black void
+  foreground    = "#edd9f5",  -- warm purple-tinted white
+
+  cursor_bg     = "#c4185c",  -- saturated crimson-magenta
+  cursor_fg     = "#0e0014",
+  cursor_border = "#c4185c",
+
+  selection_bg  = "#8b1aaa",  -- regal purple selection
+  selection_fg  = "#edd9f5",
+
+  split         = "#6b3080",  -- pane divider
+
+  -- 16 ANSI slots — programs write to these for syntax / git / ls colors
+  --   slot 0  black      slot 1  red        slot 2  green      slot 3  yellow
+  --   slot 4  blue       slot 5  magenta    slot 6  cyan       slot 7  white
+  ansi = {
+    "#200030",  -- 0  black  (used as bg variant in some apps)
+    "#c4185c",  -- 1  red    → our crimson-magenta (errors, deletions)
+    "#1f8c5a",  -- 2  green  → muted forest green  (additions, success)
+    "#b87333",  -- 3  yellow → copper-gold          (warnings, modified)
+    "#2a6fa8",  -- 4  blue   → steel blue           (info, types)
+    "#8b1aaa",  -- 5  magenta→ deep regal purple    (keywords, specials)
+    "#2a7a8c",  -- 6  cyan   → dark teal            (strings, paths)
+    "#c8b8d8",  -- 7  white  → purple-tinted grey   (normal text)
+  },
+  brights = {
+    "#6b3080",  -- 8  bright black  (comments, borders)
+    "#e8378e",  -- 9  bright red    → hot rose-red   (bold errors)
+    "#27b870",  -- 10 bright green  → vivid green    (bold success)
+    "#d4943a",  -- 11 bright yellow → warm amber     (bold warnings)
+    "#4a9fd4",  -- 12 bright blue   → sky blue       (bold info)
+    "#b040d0",  -- 13 bright magenta→ vivid purple   (bold specials)
+    "#3aadcc",  -- 14 bright cyan   → vivid teal     (bold strings)
+    "#edd9f5",  -- 15 bright white  → primary text   (bold normal)
+  },
+
+  -- Tab bar
+  tab_bar = {
+    background = "#160022",
+    active_tab = {
+      bg_color  = "#0e0014",
+      fg_color  = "#e8378e",
+      intensity = "Bold",
+    },
+    inactive_tab = {
+      bg_color = "#160022",
+      fg_color = "#6b3080",
+    },
+    inactive_tab_hover = {
+      bg_color = "#200030",
+      fg_color = "#c8b8d8",
+    },
+  },
+}
 config.font              = wezterm.font("JetBrains Mono", { weight = "Regular" })
 config.font_size         = 13.0
 config.line_height       = 1.1
