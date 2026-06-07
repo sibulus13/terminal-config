@@ -1,0 +1,28 @@
+// Default Zellij layout — three-column: context | main terminal | (optional split)
+// Persistent context pane on the left shows per-workspace goals and tasks.
+// Location in WSL2: ~/.config/zellij/layouts/workspace.kdl
+
+layout {
+    // ── Status bar rows ──────────────────────────────────────────────────────
+    pane size=1 borderless=true {
+        plugin location="zellij:compact-bar"
+    }
+
+    // ── Main area ────────────────────────────────────────────────────────────
+    pane split_direction="vertical" {
+
+        // Context sidebar — always visible, shows context.md for this workspace
+        pane size="30%" {
+            command "bash"
+            args "-c" "watch -n 3 -c 'cat ~/contexts/$(basename $PWD).md 2>/dev/null || echo \"No context file.\\nCreate: ~/contexts/$(basename $PWD).md\"'"
+            focus false
+        }
+
+        // Primary terminal area
+        pane split_direction="horizontal" {
+            pane focus=true    // active shell
+            // Second pane (split below) — uncomment if you want default hsplit
+            // pane
+        }
+    }
+}

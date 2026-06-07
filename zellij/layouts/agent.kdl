@@ -1,0 +1,21 @@
+// Agent workspace layout — context sidebar + vsplit main panes
+// Use for AI-assisted coding: watch model output on the right while editing left.
+// Location in WSL2: ~/.config/zellij/layouts/agent.kdl
+
+layout {
+    pane size=1 borderless=true {
+        plugin location="zellij:compact-bar"
+    }
+    pane split_direction="vertical" {
+        // Context sidebar
+        pane size="25%" {
+            command "bash"
+            args "-c" "watch -n 3 -c 'cat ~/contexts/$(basename $PWD).md 2>/dev/null || echo \"No context.\"'"
+            focus false
+        }
+        // Agent pane (left — primary editing)
+        pane focus=true
+        // Output / diff pane (right)
+        pane
+    }
+}

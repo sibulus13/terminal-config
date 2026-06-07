@@ -442,8 +442,9 @@ local LEGEND = {
   { keys = "LEADER  d",         desc = "pnpm dev" },
   { keys = "LEADER  i",         desc = "pnpm install" },
   { keys = "──────────────────────", desc = "─── Utility ────────────────────" },
-  { keys = "ALT+Z  N",          desc = "New workspace wizard (add to projects.lua)" },
-  { keys = "ALT+Z  T",         desc = "Fire toast: task complete (current workspace)" },
+  { keys = "LEADER  N",          desc = "New workspace wizard (add to projects.lua)" },
+  { keys = "LEADER  T",         desc = "Fire toast: task complete (current workspace)" },
+  { keys = "LEADER  H",         desc = "Show this legend (you are here)" },
   { keys = "LEADER  c",         desc = "Copy mode (vi-style scroll + select)" },
   { keys = "LEADER  f",         desc = "Search scrollback" },
   { keys = "CTRL+SHIFT  C",     desc = "Copy to clipboard" },
@@ -451,7 +452,6 @@ local LEGEND = {
   { keys = "CTRL+SHIFT  F",     desc = "Toggle full-screen" },
   { keys = "CTRL+SHIFT  L",     desc = "Clear scrollback" },
   { keys = "CTRL  + / - / 0",   desc = "Font size increase / decrease / reset" },
-  { keys = "ALT+Z  H",          desc = "Show this legend" },
 }
 
 local legend_choices = {}

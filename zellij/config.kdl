@@ -1,0 +1,65 @@
+// Zellij config — Crimson Noir theme, persistent keybinding bar
+// Location in WSL2: ~/.config/zellij/config.kdl
+
+theme "crimson-noir"
+default_layout "workspace"
+default_shell "bash"
+pane_frames false          // no decorative borders — cleaner look
+mouse_mode true
+scroll_buffer_size 20000
+copy_on_select true
+
+// ── Keybinding overrides ────────────────────────────────────────────────────
+// Zellij uses "modes" — Normal, Pane, Tab, Scroll, etc.
+// We expose only the keys we actually use; everything else keeps defaults.
+
+keybinds clear-defaults=false {
+    normal {
+        // Workspace/tab cycling — matches WezTerm muscle memory
+        bind "Alt [" { GoToPreviousTab; }
+        bind "Alt ]" { GoToNextTab; }
+        bind "Alt 1" { GoToTab 1; }
+        bind "Alt 2" { GoToTab 2; }
+        bind "Alt 3" { GoToTab 3; }
+        bind "Alt 4" { GoToTab 4; }
+        bind "Alt 5" { GoToTab 5; }
+        bind "Alt 6" { GoToTab 6; }
+        bind "Alt 7" { GoToTab 7; }
+
+        // Pane navigation — vim-style, same as WezTerm LEADER+h/j/k/l
+        bind "Alt h" { MoveFocus "Left"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt l" { MoveFocus "Right"; }
+
+        // Pane splits
+        bind "Alt |" { NewPane "Right"; }
+        bind "Alt -" { NewPane "Down"; }
+
+        // Zoom active pane
+        bind "Alt z" { ToggleFocusFullscreen; }
+
+        // Context panel — toggle the context sidebar pane
+        bind "Alt c" { FocusNextPane; }
+
+        // Detach (back to plain shell)
+        bind "Alt d" { Detach; }
+    }
+}
+
+// ── Theme ───────────────────────────────────────────────────────────────────
+themes {
+    crimson-noir {
+        fg          "#edd9f5"
+        bg          "#0e0014"
+        black       "#200030"
+        red         "#c4185c"
+        green       "#1f8c5a"
+        yellow      "#b87333"
+        blue        "#2a6fa8"
+        magenta     "#8b1aaa"
+        cyan        "#2a7a8c"
+        white       "#c8b8d8"
+        orange      "#d4943a"
+    }
+}

@@ -10,7 +10,7 @@ param(
 $DOTFILES = $PSScriptRoot
 $CONFIG   = "$env:USERPROFILE\.config"
 
-# Map: dotfiles subdir -> target path
+# Map: dotfiles subdir -> target path (Windows-side junctions)
 $links = @{
   "wezterm" = "$CONFIG\wezterm"
 }
@@ -18,10 +18,16 @@ $links = @{
 # Dependencies reminder
 Write-Host ""
 Write-Host "=== dotfiles install ===" -ForegroundColor Cyan
-Write-Host "Dependencies required by this config:"
+Write-Host "Windows dependencies:"
 Write-Host "  - Git for Windows  (provides bash at C:\Program Files\Git\bin\bash.exe)"
 Write-Host "  - JetBrains Mono font  (https://www.jetbrains.com/lp/mono/)"
 Write-Host "  - WezTerm  (https://wezfurlong.org/wezterm/)"
+Write-Host ""
+Write-Host "Optional (persistent context panel):"
+Write-Host "  - WSL2 + Ubuntu  (run: wsl --install, then restart)"
+Write-Host "  - Zellij in WSL2 (after WSL2: curl -L <release> | tar xz && mv zellij /usr/local/bin/)"
+Write-Host "  - dotfiles/zellij/ will be symlinked to ~/.config/zellij inside WSL2"
+Write-Host "  - Run zellij/install-wsl.sh from inside WSL2 after setup"
 Write-Host ""
 
 if (-not (Test-Path $CONFIG)) { New-Item -ItemType Directory -Path $CONFIG | Out-Null }
