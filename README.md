@@ -11,7 +11,7 @@ Personal terminal config — Michael Huang.
 ## Install (new machine)
 
 ```powershell
-git clone https://github.com/<you>/dotfiles ~/dotfiles
+git clone https://github.com/sibulus13/terminal-config ~/dotfiles
 cd ~/dotfiles
 .\install.ps1
 ```
