@@ -93,63 +93,67 @@ local function capture_state()
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Startup: build workspaces from PROJECTS, then apply session state
+-- Startup: open a single plain shell. Workspaces are spawned on-demand.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 wezterm.on("gui-startup", function(_cmd)
-  local saved = read_session_state()
+  mux.spawn_window({ args = { BASH, "-l" } })
+end)
 
-  for _, proj in ipairs(PROJECTS) do
-    -- First tab (creates the workspace window)
-    local t1      = proj.tabs[1]
-    local t1_args = t1.cmd
-        and { BASH, "-lc", t1.cmd }
-        or  { BASH, "-l" }
+-- ─────────────────────────────────────────────────────────────────────────────
+-- open_project: switch to a workspace, spawning it with full tab layout if new.
+-- ─────────────────────────────────────────────────────────────────────────────
 
-    -- If this workspace has saved state, check for a resume_cmd override on tab 1
-    if saved and saved.workspaces and saved.workspaces[proj.id] then
-      local saved_ws = saved.workspaces[proj.id]
-      if saved_ws.tabs and saved_ws.tabs[1] and saved_ws.tabs[1].resume_cmd then
-        t1_args = { BASH, "-lc", saved_ws.tabs[1].resume_cmd }
-      end
+local function workspace_exists(id)
+  for _, win in ipairs(mux.all_windows()) do
+    if win:get_workspace() == id then return true end
+  end
+  return false
+end
+
+local function open_project(proj_id)
+  return wezterm.action_callback(function(window, pane)
+    if workspace_exists(proj_id) then
+      window:perform_action(act.SwitchToWorkspace { name = proj_id }, pane)
+      return
     end
 
-    local tab, _pane, window = mux.spawn_window({
-      workspace = proj.id,
+    local proj = nil
+    for _, p in ipairs(PROJECTS) do
+      if p.id == proj_id then proj = p; break end
+    end
+    if not proj then return end
+
+    local saved = read_session_state()
+    local t1    = proj.tabs[1]
+    local t1_args = t1.cmd and { BASH, "-lc", t1.cmd } or { BASH, "-l" }
+    if saved and saved.workspaces and saved.workspaces[proj_id] then
+      local st = saved.workspaces[proj_id].tabs and saved.workspaces[proj_id].tabs[1]
+      if st and st.resume_cmd then t1_args = { BASH, "-lc", st.resume_cmd } end
+    end
+
+    local tab, _, win = mux.spawn_window({
+      workspace = proj_id,
       cwd       = proj.cwd,
       args      = t1_args,
     })
     tab:set_title(t1.title)
 
-    -- Remaining tabs
     for j = 2, #proj.tabs do
       local t    = proj.tabs[j]
-      local args = t.cmd
-          and { BASH, "-lc", t.cmd }
-          or  { BASH, "-l" }
-
-      -- Override with saved resume_cmd if available
-      if saved and saved.workspaces and saved.workspaces[proj.id] then
-        local saved_tab = saved.workspaces[proj.id].tabs and saved.workspaces[proj.id].tabs[j]
-        if saved_tab and saved_tab.resume_cmd then
-          args = { BASH, "-lc", saved_tab.resume_cmd }
-        end
+      local args = t.cmd and { BASH, "-lc", t.cmd } or { BASH, "-l" }
+      if saved and saved.workspaces and saved.workspaces[proj_id] then
+        local st = saved.workspaces[proj_id].tabs and saved.workspaces[proj_id].tabs[j]
+        if st and st.resume_cmd then args = { BASH, "-lc", st.resume_cmd } end
       end
-
-      local new_tab, _, _ = window:spawn_tab({
-        cwd  = proj.cwd,
-        args = args,
-      })
+      local new_tab, _ = win:spawn_tab({ cwd = proj.cwd, args = args })
       new_tab:set_title(t.title)
     end
 
-    tab:activate() -- focus tab 1 (agent)
-  end
-
-  -- Restore previously active workspace
-  local target_ws = (saved and saved.active_workspace) or PROJECTS[1].id
-  mux.set_active_workspace(target_ws)
-end)
+    tab:activate()
+    window:perform_action(act.SwitchToWorkspace { name = proj_id }, pane)
+  end)
+end
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Periodic state flush (every 30s) so abrupt kills don't lose context
@@ -320,19 +324,19 @@ config.keys = {
       fuzzy   = true,
       action  = wezterm.action_callback(function(window, pane, id, _label)
         if id and id ~= "" then
-          window:perform_action(act.SwitchToWorkspace { name = id }, pane)
+          window:perform_action(open_project(id), pane)
         end
       end),
     },
   },
 
-  { key = "1", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[1].id } },
-  { key = "2", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[2].id } },
-  { key = "3", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[3].id } },
-  { key = "4", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[4].id } },
-  { key = "5", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[5].id } },
-  { key = "6", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[6].id } },
-  { key = "7", mods = "LEADER", action = act.SwitchToWorkspace { name = PROJECTS[7].id } },
+  { key = "1", mods = "LEADER", action = open_project(PROJECTS[1].id) },
+  { key = "2", mods = "LEADER", action = open_project(PROJECTS[2].id) },
+  { key = "3", mods = "LEADER", action = open_project(PROJECTS[3].id) },
+  { key = "4", mods = "LEADER", action = open_project(PROJECTS[4].id) },
+  { key = "5", mods = "LEADER", action = open_project(PROJECTS[5].id) },
+  { key = "6", mods = "LEADER", action = open_project(PROJECTS[6].id) },
+  { key = "7", mods = "LEADER", action = open_project(PROJECTS[7].id) },
   { key = "[", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
   { key = "]", mods = "LEADER", action = act.SwitchWorkspaceRelative(1)  },
 
