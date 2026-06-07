@@ -25,7 +25,8 @@ cat << 'EOF'
 ║  LEADER r          registry regen                ║
 ║  LEADER b          backtest broad sweep          ║
 ║  LEADER d          pnpm dev                      ║
-║  LEADER n          task-complete toast           ║
+║  ALT+Z  N          new workspace wizard          ║
+║  ALT+Z  T          task-complete toast           ║
 ╠══════════════════════════════════════════════════╣
 ║  UTILITY                                         ║
 ║  ALT+Z  H          full key legend overlay       ║

@@ -99,11 +99,17 @@ end
 local HELP_SCRIPT = CFG_DIR:gsub("\\", "/") .. "/help.sh"
 
 wezterm.on("gui-startup", function(_cmd)
-  local tab, _, window = mux.spawn_window({ args = { BASH, "-l" } })
-  tab:set_title("shell")
-  local help_tab, _ = window:spawn_tab({ args = { BASH, HELP_SCRIPT } })
+  -- Start on the help tab so key bindings are immediately visible.
+  -- Press ALT+1-7 to open a workspace; that workspace becomes the active window.
+  -- This launcher window stays open as a scratch shell / reference.
+  local help_tab, _, window = mux.spawn_window({
+    workspace = "launcher",
+    args      = { BASH, HELP_SCRIPT },
+  })
   help_tab:set_title("help")
-  tab:activate()
+  local shell_tab, _ = window:spawn_tab({ args = { BASH, "-l" } })
+  shell_tab:set_title("shell")
+  help_tab:activate()
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -294,19 +300,33 @@ wezterm.on("update-right-status", function(window, _pane)
       end
 
       local is_active = proj.id == current_ws
-      local dot       = attention and " ●" or ""
-      local label     = string.format("ALT+%d %s%s  ", i, proj.id, dot)
+      local dot       = attention and "● " or ""
+      -- Shorten id to first 8 chars so the bar doesn't overflow
+      local short_id  = proj.id:sub(1, 8)
+      local label     = string.format(" %s ALT+%d %s  ", dot, i, short_id)
 
       table.insert(left_parts, { Attribute = { Intensity = is_active and "Bold" or "Normal" } })
-      table.insert(left_parts, { Foreground = { Color = is_active and "#e8378e" or "#6b3080" } })
+      -- Active: bright crimson. Inactive: visible muted rose. Attention dot: bright amber.
+      if attention and not is_active then
+        table.insert(left_parts, { Foreground = { Color = "#d4943a" } })  -- amber when needs attention
+      else
+        table.insert(left_parts, { Foreground = { Color = is_active and "#e8378e" or "#9b6aaa" } })
+      end
       table.insert(left_parts, { Text = label })
     end
   end
 
-  -- Hint: only show if no workspaces open yet
+  -- When no project workspaces open, show a visible hint
   if #left_parts == 1 then
-    table.insert(left_parts, { Foreground = { Color = "#3a1a4a" } })
-    table.insert(left_parts, { Text = "ALT+1-7 open workspace  ALT+Z H for keys  " })
+    table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
+    table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
+    table.insert(left_parts, { Text = "  ALT+1-7" })
+    table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })
+    table.insert(left_parts, { Text = " open workspace  " })
+    table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
+    table.insert(left_parts, { Text = "ALT+Z H" })
+    table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })
+    table.insert(left_parts, { Text = " key legend  " })
   end
 
   window:set_left_status(wezterm.format(left_parts))
@@ -380,7 +400,8 @@ local LEGEND = {
   { keys = "LEADER  d",         desc = "pnpm dev" },
   { keys = "LEADER  i",         desc = "pnpm install" },
   { keys = "──────────────────────", desc = "─── Utility ────────────────────" },
-  { keys = "LEADER  n",         desc = "Fire toast: task complete (current workspace)" },
+  { keys = "ALT+Z  N",          desc = "New workspace wizard (add to projects.lua)" },
+  { keys = "ALT+Z  T",         desc = "Fire toast: task complete (current workspace)" },
   { keys = "LEADER  c",         desc = "Copy mode (vi-style scroll + select)" },
   { keys = "LEADER  f",         desc = "Search scrollback" },
   { keys = "CTRL+SHIFT  C",     desc = "Copy to clipboard" },
@@ -468,9 +489,21 @@ config.keys = {
   { key = "d", mods = "LEADER",     action = act.SendString "pnpm dev\n" },
   { key = "i", mods = "LEADER",     action = act.SendString "pnpm install\n" },
 
-  -- ── Notifications ─────────────────────────────────────────────────────────
+  -- ── New workspace wizard (ALT+Z N) ───────────────────────────────────────
   {
     key = "n", mods = "LEADER",
+    action = wezterm.action_callback(function(window, pane)
+      local new_ws_script = CFG_DIR:gsub("\\", "/") .. "/new-workspace.sh"
+      local tab, _ = window:mux_window():spawn_tab({
+        args = { BASH, new_ws_script },
+      })
+      tab:set_title("new-ws")
+    end),
+  },
+
+  -- ── Notifications ─────────────────────────────────────────────────────────
+  {
+    key = "t", mods = "LEADER",
     action = wezterm.action_callback(function(window, _pane)
       local ws = window:active_workspace()
       window:toast_notification("WezTerm", ws .. " — task complete", nil, 5000)
