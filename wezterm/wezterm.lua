@@ -404,12 +404,14 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 local LEGEND = {
-  { keys = "ALT  1-7",          desc = "Open / switch workspace directly" },
-  { keys = "ALT+Z  w",          desc = "Fuzzy workspace picker (by name)" },
-  { keys = "ALT+Z  [ / ]",      desc = "Cycle workspaces prev / next" },
+  { keys = "ALT  0",            desc = "Return to launcher / help workspace" },
+  { keys = "ALT  1-7",          desc = "Open / switch to numbered workspace" },
+  { keys = "ALT  ← / →",        desc = "Cycle workspaces prev / next" },
+  { keys = "ALT  P",            desc = "Fuzzy project picker (by name)" },
+  { keys = "LEADER  O",         desc = "Open any directory as workspace by path" },
   { keys = "──────────────────────", desc = "─── Tabs ───────────────────────" },
+  { keys = "ALT  [ / ]",        desc = "Previous / next tab" },
   { keys = "CTRL+ALT  1-4",     desc = "Jump to tab 1–4 in current workspace" },
-  { keys = "CTRL+SHIFT  H / L", desc = "Previous / next tab" },
   { keys = "CTRL+SHIFT  T",     desc = "New tab (same directory)" },
   { keys = "CTRL+SHIFT  W",     desc = "Close current tab" },
   { keys = "──────────────────────", desc = "─── Panes ──────────────────────" },
@@ -475,9 +477,9 @@ config.keys = {
   -- Cycle workspaces with ALT+Left/Right
   { key = "LeftArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
   { key = "RightArrow", mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
-  -- Fuzzy picker for browsing by name
+  -- ALT+P → fuzzy project picker (single chord, no LEADER)
   {
-    key = "w", mods = "LEADER",
+    key = "p", mods = "ALT",
     action = act.InputSelector {
       title   = "Open Project Workspace",
       choices = ws_choices,
@@ -487,11 +489,37 @@ config.keys = {
       end),
     },
   },
+  -- LEADER+O → open any directory as an ad-hoc workspace by path
+  {
+    key = "o", mods = "LEADER",
+    action = act.PromptInputLine {
+      description = "Workspace path  (e.g. D:/repo/my-project)",
+      action = wezterm.action_callback(function(window, pane, path)
+        if not path or path == "" then return end
+        -- Derive a slug from the last path component
+        local base = path:match("([^/\\]+)[/\\]?$") or path
+        local id   = base:lower():gsub("[^a-z0-9]+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+        if id == "" then id = "adhoc" end
+        if workspace_exists(id) then
+          window:perform_action(act.SwitchToWorkspace { name = id }, pane)
+          return
+        end
+        local tab, _, _win = mux.spawn_window({
+          workspace = id,
+          cwd       = path,
+          args      = { BASH, "-l" },
+        })
+        tab:set_title("shell")
+        apply_split(tab, "hsplit", "shell", path)
+        window:perform_action(act.SwitchToWorkspace { name = id }, pane)
+      end),
+    },
+  },
 
   -- ── Tab navigation ────────────────────────────────────────────────────────
-  -- CTRL+Tab / CTRL+SHIFT+Tab — browser-familiar, no terminal conflict
-  { key = "Tab",        mods = "CTRL",       action = act.ActivateTabRelative(1)  },
-  { key = "Tab",        mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+  -- ALT+[ / ALT+] — no Windows-system conflicts, left-hand friendly
+  { key = "[", mods = "ALT", action = act.ActivateTabRelative(-1) },
+  { key = "]", mods = "ALT", action = act.ActivateTabRelative(1)  },
   -- CTRL+ALT+1-4 for direct tab jump
   { key = "1", mods = "CTRL|ALT",   action = act.ActivateTab(0) },
   { key = "2", mods = "CTRL|ALT",   action = act.ActivateTab(1) },

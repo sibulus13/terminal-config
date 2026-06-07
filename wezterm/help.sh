@@ -7,12 +7,12 @@ cat << 'EOF'
 ║  WORKSPACES                                      ║
 ║  ALT + 0           launcher / help               ║
 ║  ALT + 1–7         open / switch workspace       ║
-║  ALT + ← / →       cycle prev / next workspace   ║
-║  ALT+Z  w          fuzzy picker (by name)        ║
+║  ALT + ← / →       cycle workspaces              ║
+║  ALT + P           fuzzy project picker          ║
+║  ALT+Z  O          open any repo by path         ║
 ╠══════════════════════════════════════════════════╣
 ║  TABS                                            ║
-║  CTRL+Tab          next tab                      ║
-║  CTRL+SHIFT+Tab    prev tab                      ║
+║  ALT + [ / ]       prev / next tab               ║
 ║  CTRL+ALT 1–4      jump to tab by number         ║
 ║  CTRL+SHIFT T      new tab (same dir)            ║
 ║  CTRL+SHIFT W      close tab                     ║
@@ -37,5 +37,8 @@ cat << 'EOF'
 ║  CTRL  + / - / 0   font size inc / dec / reset   ║
 ╚══════════════════════════════════════════════════╝
 EOF
-printf '\e[0m\n'
+printf '\e[0m'
+# Pause so the banner stays visible before the shell takes over.
+# If .bashrc calls `clear`, exec-ing without this wipes the banner instantly.
+read -rsp $'  \e[35m[Enter]\e[0m to open shell...\n' _
 exec bash -l
