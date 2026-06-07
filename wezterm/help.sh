@@ -5,9 +5,9 @@ cat << 'EOF'
 ║   WezTerm  ·  LEADER = ALT+Z  (1.5 s)           ║
 ╠══════════════════════════════════════════════════╣
 ║  WORKSPACES                                      ║
-║  LEADER w          fuzzy workspace picker        ║
-║  LEADER 1–7        jump to workspace directly    ║
-║  LEADER [ / ]      cycle prev / next             ║
+║  ALT + 1–7         open / switch workspace       ║
+║  ALT+Z  w          fuzzy picker (by name)        ║
+║  ALT+Z  [ / ]      cycle prev / next             ║
 ╠══════════════════════════════════════════════════╣
 ║  TABS                                            ║
 ║  CTRL+ALT 1–4      jump to tab                  ║
@@ -28,7 +28,7 @@ cat << 'EOF'
 ║  LEADER n          task-complete toast           ║
 ╠══════════════════════════════════════════════════╣
 ║  UTILITY                                         ║
-║  LEADER ?          full key legend overlay       ║
+║  ALT+Z  H          full key legend overlay       ║
 ║  LEADER c          copy mode (vi scroll)         ║
 ║  CTRL+SHIFT F      fullscreen                    ║
 ║  CTRL  + / - / 0   font size inc / dec / reset   ║

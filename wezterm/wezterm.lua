@@ -265,36 +265,56 @@ config.audible_bell      = "Disabled"
 config.default_prog      = { BASH, "-l" }
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Status bar: persistent hint (left) + workspace + clock (right)
+-- Status bar
+-- Left : open workspaces with attention indicators (● = unseen output)
+-- Right: clock
 -- ─────────────────────────────────────────────────────────────────────────────
 
 wezterm.on("update-right-status", function(window, _pane)
-  local ws   = window:active_workspace()
+  local current_ws = window:active_workspace()
+
+  -- Index open workspaces by id for O(1) lookup
+  local open_wins = {}
+  for _, win in ipairs(mux.all_windows()) do
+    open_wins[win:get_workspace()] = win
+  end
+
+  -- Walk PROJECTS in definition order so ALT+1-7 indices are stable
+  local left_parts = { { Text = "  " } }
+  for i, proj in ipairs(PROJECTS) do
+    local win = open_wins[proj.id]
+    if win then
+      -- Check every pane in every tab for unseen output
+      local attention = false
+      for _, tab in ipairs(win:tabs()) do
+        for _, p in ipairs(tab:panes()) do
+          if p:has_unseen_output() then attention = true; break end
+        end
+        if attention then break end
+      end
+
+      local is_active = proj.id == current_ws
+      local dot       = attention and " ●" or ""
+      local label     = string.format("ALT+%d %s%s  ", i, proj.id, dot)
+
+      table.insert(left_parts, { Attribute = { Intensity = is_active and "Bold" or "Normal" } })
+      table.insert(left_parts, { Foreground = { Color = is_active and "#e8378e" or "#6b3080" } })
+      table.insert(left_parts, { Text = label })
+    end
+  end
+
+  -- Hint: only show if no workspaces open yet
+  if #left_parts == 1 then
+    table.insert(left_parts, { Foreground = { Color = "#3a1a4a" } })
+    table.insert(left_parts, { Text = "ALT+1-7 open workspace  ALT+Z H for keys  " })
+  end
+
+  window:set_left_status(wezterm.format(left_parts))
+
   local time = wezterm.strftime "%H:%M"
-
-  window:set_left_status(wezterm.format({
-    { Foreground = { Color = "#6b3080" } },
-    { Text = "  ALT+Z → " },
-    { Foreground = { Color = "#c4185c" } },
-    { Text = "w" },
-    { Foreground = { Color = "#6b3080" } },
-    { Text = " picker  " },
-    { Foreground = { Color = "#c4185c" } },
-    { Text = "1-7" },
-    { Foreground = { Color = "#6b3080" } },
-    { Text = " workspace  " },
-    { Foreground = { Color = "#c4185c" } },
-    { Text = "?" },
-    { Foreground = { Color = "#6b3080" } },
-    { Text = " keys  " },
-  }))
-
   window:set_right_status(wezterm.format({
-    { Attribute = { Intensity = "Bold" } },
-    { Foreground = { Color = "#c4185c" } },
-    { Text = "  " .. ws },
     { Foreground = { Color = "#6b3080" } },
-    { Text = "  " .. time .. "  " },
+    { Text = time .. "  " },
   }))
 end)
 
@@ -338,8 +358,8 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 local LEGEND = {
-  { keys = "ALT+Z  w",          desc = "Open project workspace (fuzzy picker)" },
-  { keys = "ALT+Z  1-7",        desc = "Jump directly to project 1–7" },
+  { keys = "ALT  1-7",          desc = "Open / switch workspace directly" },
+  { keys = "ALT+Z  w",          desc = "Fuzzy workspace picker (by name)" },
   { keys = "ALT+Z  [ / ]",      desc = "Cycle workspaces prev / next" },
   { keys = "──────────────────────", desc = "─── Tabs ───────────────────────" },
   { keys = "CTRL+ALT  1-4",     desc = "Jump to tab 1–4 in current workspace" },
@@ -368,7 +388,7 @@ local LEGEND = {
   { keys = "CTRL+SHIFT  F",     desc = "Toggle full-screen" },
   { keys = "CTRL+SHIFT  L",     desc = "Clear scrollback" },
   { keys = "CTRL  + / - / 0",   desc = "Font size increase / decrease / reset" },
-  { keys = "LEADER  ?",         desc = "Show this legend" },
+  { keys = "ALT+Z  H",          desc = "Show this legend" },
 }
 
 local legend_choices = {}
@@ -385,19 +405,26 @@ end
 
 config.keys = {
 
-  -- ── Legend overlay ────────────────────────────────────────────────────────
+  -- ── Legend overlay (ALT+Z then H — no SHIFT needed) ──────────────────────
   {
-    key = "?", mods = "LEADER",
+    key = "h", mods = "LEADER",
     action = act.InputSelector {
-      title   = "Key Bindings — press Esc to dismiss",
+      title   = "Key Bindings — Esc to dismiss",
       choices = legend_choices,
       fuzzy   = true,
-      -- No action on select — this is read-only reference
       action  = wezterm.action_callback(function(_win, _pane, _id, _label) end),
     },
   },
 
-  -- ── Workspace switching ───────────────────────────────────────────────────
+  -- ── Workspace: direct ALT+1-7, no chord needed ───────────────────────────
+  { key = "1", mods = "ALT", action = open_project(PROJECTS[1].id) },
+  { key = "2", mods = "ALT", action = open_project(PROJECTS[2].id) },
+  { key = "3", mods = "ALT", action = open_project(PROJECTS[3].id) },
+  { key = "4", mods = "ALT", action = open_project(PROJECTS[4].id) },
+  { key = "5", mods = "ALT", action = open_project(PROJECTS[5].id) },
+  { key = "6", mods = "ALT", action = open_project(PROJECTS[6].id) },
+  { key = "7", mods = "ALT", action = open_project(PROJECTS[7].id) },
+  -- Fuzzy picker for when you want to browse by name
   {
     key = "w", mods = "LEADER",
     action = act.InputSelector {
@@ -405,20 +432,10 @@ config.keys = {
       choices = ws_choices,
       fuzzy   = true,
       action  = wezterm.action_callback(function(window, pane, id, _label)
-        if id and id ~= "" then
-          window:perform_action(open_project(id), pane)
-        end
+        if id and id ~= "" then window:perform_action(open_project(id), pane) end
       end),
     },
   },
-
-  { key = "1", mods = "LEADER", action = open_project(PROJECTS[1].id) },
-  { key = "2", mods = "LEADER", action = open_project(PROJECTS[2].id) },
-  { key = "3", mods = "LEADER", action = open_project(PROJECTS[3].id) },
-  { key = "4", mods = "LEADER", action = open_project(PROJECTS[4].id) },
-  { key = "5", mods = "LEADER", action = open_project(PROJECTS[5].id) },
-  { key = "6", mods = "LEADER", action = open_project(PROJECTS[6].id) },
-  { key = "7", mods = "LEADER", action = open_project(PROJECTS[7].id) },
   { key = "[", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
   { key = "]", mods = "LEADER", action = act.SwitchWorkspaceRelative(1)  },
 
