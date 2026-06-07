@@ -160,36 +160,50 @@ local function open_project(proj_id)
     end
     if not proj then return end
 
-    local saved = read_session_state()
-    local t1    = proj.tabs[1]
+    local saved   = read_session_state()
+    local t1      = proj.tabs[1]
     local t1_args = t1.cmd and { BASH, "-lc", t1.cmd } or { BASH, "-l" }
     if saved and saved.workspaces and saved.workspaces[proj_id] then
       local st = saved.workspaces[proj_id].tabs and saved.workspaces[proj_id].tabs[1]
       if st and st.resume_cmd then t1_args = { BASH, "-lc", st.resume_cmd } end
     end
 
-    local tab, _, win = mux.spawn_window({
-      workspace = proj_id,
-      cwd       = proj.cwd,
-      args      = t1_args,
-    })
-    tab:set_title(t1.title)
-    apply_split(tab, t1.layout, t1.title, proj.cwd)
+    -- Switch the CURRENT OS window to the new workspace.
+    -- `spawn` seeds the workspace's first tab — no new OS window is created.
+    window:perform_action(act.SwitchToWorkspace {
+      name  = proj_id,
+      spawn = { cwd = proj.cwd, args = t1_args },
+    }, pane)
 
-    for j = 2, #proj.tabs do
-      local t    = proj.tabs[j]
-      local args = t.cmd and { BASH, "-lc", t.cmd } or { BASH, "-l" }
-      if saved and saved.workspaces and saved.workspaces[proj_id] then
-        local st = saved.workspaces[proj_id].tabs and saved.workspaces[proj_id].tabs[j]
-        if st and st.resume_cmd then args = { BASH, "-lc", st.resume_cmd } end
+    -- perform_action is asynchronous; wait briefly for the switch to land
+    -- before we can manipulate the workspace's tabs via the mux API.
+    wezterm.time.call_after(0.15, function()
+      local target_win = nil
+      for _, win in ipairs(mux.all_windows()) do
+        if win:get_workspace() == proj_id then target_win = win; break end
       end
-      local new_tab, _ = win:spawn_tab({ cwd = proj.cwd, args = args })
-      new_tab:set_title(t.title)
-      apply_split(new_tab, t.layout, t.title, proj.cwd)
-    end
+      if not target_win then return end
 
-    tab:activate()
-    window:perform_action(act.SwitchToWorkspace { name = proj_id }, pane)
+      local tabs = target_win:tabs()
+      if #tabs == 0 then return end
+
+      tabs[1]:set_title(t1.title)
+      apply_split(tabs[1], t1.layout, t1.title, proj.cwd)
+
+      for j = 2, #proj.tabs do
+        local t    = proj.tabs[j]
+        local args = t.cmd and { BASH, "-lc", t.cmd } or { BASH, "-l" }
+        if saved and saved.workspaces and saved.workspaces[proj_id] then
+          local st = saved.workspaces[proj_id].tabs and saved.workspaces[proj_id].tabs[j]
+          if st and st.resume_cmd then args = { BASH, "-lc", st.resume_cmd } end
+        end
+        local new_tab = target_win:spawn_tab({ cwd = proj.cwd, args = args })
+        new_tab:set_title(t.title)
+        apply_split(new_tab, t.layout, t.title, proj.cwd)
+      end
+
+      tabs[1]:activate()
+    end)
   end)
 end
 
