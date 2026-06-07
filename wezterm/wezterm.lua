@@ -96,52 +96,14 @@ end
 -- Startup: open a single plain shell. Workspaces are spawned on-demand.
 -- ─────────────────────────────────────────────────────────────────────────────
 
-local HELP_CMD = table.concat({
-  "clear;",
-  "printf '\\033[1;35m';",
-  "cat << 'CHEATSHEET'",
-  "╔══════════════════════════════════════════════════╗",
-  "║   WezTerm  ·  LEADER = CTRL+SPACE  (1.5 s)      ║",
-  "╠══════════════════════════════════════════════════╣",
-  "║  WORKSPACES                                      ║",
-  "║  LEADER w          fuzzy workspace picker        ║",
-  "║  LEADER 1–7        jump to workspace directly    ║",
-  "║  LEADER [ / ]      cycle prev / next             ║",
-  "╠══════════════════════════════════════════════════╣",
-  "║  TABS                                            ║",
-  "║  CTRL+ALT 1–4      jump to tab                  ║",
-  "║  CTRL+SHIFT H / L  prev / next tab               ║",
-  "║  CTRL+SHIFT T      new tab (same dir)            ║",
-  "║  CTRL+SHIFT W      close tab                     ║",
-  "╠══════════════════════════════════════════════════╣",
-  "║  PANES                                           ║",
-  "║  LEADER |          split right                   ║",
-  "║  LEADER -          split down                    ║",
-  "║  LEADER h/j/k/l    move between panes            ║",
-  "║  LEADER z          zoom / unzoom pane            ║",
-  "╠══════════════════════════════════════════════════╣",
-  "║  MACROS                                          ║",
-  "║  LEADER r          registry regen                ║",
-  "║  LEADER b          backtest broad sweep          ║",
-  "║  LEADER d          pnpm dev                      ║",
-  "║  LEADER n          task-complete toast           ║",
-  "╠══════════════════════════════════════════════════╣",
-  "║  UTILITY                                         ║",
-  "║  LEADER ?          full key legend overlay       ║",
-  "║  LEADER c          copy mode (vi scroll)         ║",
-  "║  CTRL+SHIFT F      fullscreen                    ║",
-  "║  CTRL  + / - / 0   font size inc / dec / reset   ║",
-  "╚══════════════════════════════════════════════════╝",
-  "CHEATSHEET",
-  "printf '\\033[0m';",
-  "exec bash",
-}, " ")
+local HELP_SCRIPT = CFG_DIR:gsub("\\", "/") .. "/help.sh"
 
 wezterm.on("gui-startup", function(_cmd)
-  local _, _, window = mux.spawn_window({ args = { BASH, "-l" } })
-  local help_tab, _ = window:spawn_tab({ args = { BASH, "-lc", HELP_CMD } })
+  local tab, _, window = mux.spawn_window({ args = { BASH, "-l" } })
+  tab:set_title("shell")
+  local help_tab, _ = window:spawn_tab({ args = { BASH, HELP_SCRIPT } })
   help_tab:set_title("help")
-  window:tabs()[1]:activate()
+  tab:activate()
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -294,8 +256,8 @@ config.tab_max_width     = 22
 config.show_new_tab_button_in_tab_bar = false
 config.window_padding    = { left = 6, right = 6, top = 4, bottom = 4 }
 config.window_decorations = "TITLE | RESIZE"
-config.initial_cols      = 220
-config.initial_rows      = 52
+config.initial_cols      = 120
+config.initial_rows      = 34
 config.default_cursor_style = "BlinkingBar"
 config.cursor_blink_rate = 500
 config.scrollback_lines  = 20000
