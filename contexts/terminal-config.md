@@ -12,16 +12,17 @@
 
 ### What works right now
 - Single OS window — all workspaces share one WezTerm window (no multi-window close prompts)
-- Lazy workspace spawning — projects open on demand via ALT+1-7
-- ALT+P fuzzy project picker, ALT+Z O open-by-path (ad-hoc workspace from any dir)
-- ALT+Left/Right cycle workspaces, ALT+[ / ALT+] cycle tabs
+- Lazy workspace spawning — projects open on demand via ALT+P picker
+- ALT+P fuzzy workspace picker (● open · ○ closed); ALT+↑/↓ cycle workspaces
+- ALT+←/→ cycle tabs within workspace
 - Default pane splits per tab type: agent=vsplit, dev/cmd/test=hsplit
-- Left status bar: shows open workspaces with attention dots (● = unseen output)
+- Left status bar: shows **only open** workspaces with attention dots (● = unseen output)
+- Right status bar: persistent `ALT+/ legend` reminder + clock
 - Session state: auto-saved every 30s + on graceful close (session_state.lua)
 - Startup help banner with [Enter] pause (help.sh)
-- ALT+Z H → full legend overlay (InputSelector, fuzzy searchable)
+- ALT+/ → full legend overlay (fuzzy searchable; **pressing Enter executes the action**)
+- LEGEND is single source of truth — `config.keys` references `LEGEND[i].action` directly
 - Crimson Noir theme: bg #0e0014, accent #c4185c, 16 ANSI slots configured
-- New workspace wizard (ALT+Z N), task-complete toast (ALT+Z T)
 - Dotfiles versioned at github.com/sibulus13/terminal-config
 
 ### What's blocked / waiting
@@ -32,7 +33,7 @@
 
 ## In Progress
 
-_Nothing actively in flight right now (just completed workspace UX refactor — see decisions below)._
+_Nothing actively in flight right now (just completed executable legend — see decisions below)._
 
 ---
 
@@ -52,14 +53,15 @@ _Nothing actively in flight right now (just completed workspace UX refactor — 
 |----------|-----------|
 | `mux.spawn_window` → `SwitchToWorkspace + call_after` | Prevents multiple OS windows requiring close confirmations |
 | LEADER = ALT+Z | Left-hand only; avoids CTRL+Space (Super Whisper conflict) |
-| Tab cycling: ALT+[ / ALT+] | CTRL+Tab intercepted by some Windows system components |
+| Tab cycling: ALT+←/→; workspace cycling: ALT+↑/↓ | Two axes, one modifier — consistent mental model |
 | Zellij via WSL2, not native Windows | Native Zellij Windows binary has PTY issues as of mid-2025 |
 | Context files: `~/contexts/<project>.md` | Watch-able by Zellij sidebar, editable by Claude/user |
 | Single `contexts/terminal-config.md` per project | One file = one source of truth; no hunting across multiple docs |
 | Removed ALT+1-7 workspace shortcuts | User wants command-palette UX, not slot memorization |
 | `ALT+P` picker built dynamically | Shows ● for open workspaces vs. ○ closed — live status |
 | Session state saves `active_tab_idx` not `tab_id` | tab_id resets each launch; index is stable across restarts |
-| `LEADER+O` (open by path) now single-window | Was using `mux.spawn_window` — fixed to `SwitchToWorkspace` |
+| LEGEND as single source of truth | `config.keys` references `LEGEND[i].action` — no duplicate action definitions |
+| ALT+/ legend Enter executes the action | `PICK_WORKSPACE` stored as variable; shared between LEGEND[1] and `config.keys` |
 
 ---
 

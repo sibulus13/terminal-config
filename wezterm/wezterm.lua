@@ -217,6 +217,27 @@ local function open_project(proj_id)
   end)
 end
 
+-- Workspace picker: defined once, shared by both LEGEND and config.keys.
+-- action_callback returns a WezTermAction object usable with perform_action.
+local PICK_WORKSPACE = wezterm.action_callback(function(window, pane)
+  local choices = {}
+  for _, p in ipairs(PROJECTS) do
+    local open = workspace_exists(p.id)
+    table.insert(choices, {
+      id    = p.id,
+      label = (open and "● " or "○ ") .. p.label,
+    })
+  end
+  window:perform_action(act.InputSelector {
+    title   = "Workspace  (● open · ○ closed)",
+    choices = choices,
+    fuzzy   = true,
+    action  = wezterm.action_callback(function(w, p2, id, _)
+      if id and id ~= "" then w:perform_action(open_project(id), p2) end
+    end),
+  }, pane)
+end)
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Periodic state flush (every 30s) so abrupt kills don't lose context
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -425,107 +446,98 @@ config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 1500 }
 -- Add any new binding here alongside its keys entry below so the legend stays in sync.
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- LEGEND: single source of truth — each entry carries its WezTermAction.
+-- Selecting an entry in the ALT+/ overlay executes it; separators (action=nil) are no-ops.
 local LEGEND = {
-  -- Workspaces
-  { keys = "ALT  P",          desc = "Open workspace  (● open · ○ closed)" },
-  { keys = "ALT  ↑ / ↓",      desc = "Cycle workspaces up / down" },
-  { keys = "ALT  0",          desc = "Launcher / help" },
-  { keys = "─────────────────────", desc = "─── Tabs ────────────────────────" },
-  { keys = "ALT  ← / →",      desc = "Prev / next tab" },
-  { keys = "CTRL+SHIFT  T",   desc = "New tab" },
-  { keys = "CTRL+SHIFT  W",   desc = "Close tab" },
-  { keys = "─────────────────────", desc = "─── Panes ───────────────────────" },
-  { keys = "LEADER  |",       desc = "Split pane right" },
-  { keys = "LEADER  -",       desc = "Split pane down" },
-  { keys = "LEADER  h/j/k/l", desc = "Move between panes (vim dirs)" },
-  { keys = "LEADER  z",       desc = "Zoom / unzoom pane" },
-  { keys = "─────────────────────", desc = "─── Utility ─────────────────────" },
-  { keys = "ALT  /",          desc = "Show this legend (you are here)" },
-  { keys = "LEADER  c",       desc = "Copy mode (vi-style scroll + select)" },
-  { keys = "CTRL+SHIFT  C/V", desc = "Copy / paste" },
-  { keys = "CTRL+SHIFT  F",   desc = "Fullscreen" },
-  { keys = "CTRL  + / - / 0", desc = "Font size inc / dec / reset" },
+  { keys = "ALT  P",          desc = "Open workspace  (● open · ○ closed)",  action = PICK_WORKSPACE },
+  { keys = "ALT  ↑",          desc = "Previous workspace",                    action = act.SwitchWorkspaceRelative(-1) },
+  { keys = "ALT  ↓",          desc = "Next workspace",                        action = act.SwitchWorkspaceRelative(1)  },
+  { keys = "ALT  0",          desc = "Launcher / help",                       action = act.SwitchToWorkspace { name = "launcher" } },
+  { keys = "─────────────────────", desc = "─── Tabs ────────────────────────",  action = nil },
+  { keys = "ALT  ←",          desc = "Previous tab",                          action = act.ActivateTabRelative(-1) },
+  { keys = "ALT  →",          desc = "Next tab",                              action = act.ActivateTabRelative(1)  },
+  { keys = "CTRL+SHIFT  T",   desc = "New tab",                               action = act.SpawnTab "CurrentPaneDomain" },
+  { keys = "CTRL+SHIFT  W",   desc = "Close tab",                             action = act.CloseCurrentTab { confirm = true } },
+  { keys = "─────────────────────", desc = "─── Panes ───────────────────────",  action = nil },
+  { keys = "LEADER  |",       desc = "Split pane right",                      action = act.SplitHorizontal { domain = "CurrentPaneDomain" } },
+  { keys = "LEADER  -",       desc = "Split pane down",                       action = act.SplitVertical   { domain = "CurrentPaneDomain" } },
+  { keys = "LEADER  h",       desc = "Focus pane left",                       action = act.ActivatePaneDirection "Left"  },
+  { keys = "LEADER  j",       desc = "Focus pane down",                       action = act.ActivatePaneDirection "Down"  },
+  { keys = "LEADER  k",       desc = "Focus pane up",                         action = act.ActivatePaneDirection "Up"    },
+  { keys = "LEADER  l",       desc = "Focus pane right",                      action = act.ActivatePaneDirection "Right" },
+  { keys = "LEADER  z",       desc = "Zoom / unzoom pane",                    action = act.TogglePaneZoomState },
+  { keys = "─────────────────────", desc = "─── Utility ─────────────────────",  action = nil },
+  { keys = "ALT  /",          desc = "Show this legend",                      action = nil },
+  { keys = "LEADER  c",       desc = "Copy mode (vi scroll + select)",        action = act.ActivateCopyMode },
+  { keys = "CTRL+SHIFT  C",   desc = "Copy to clipboard",                     action = act.CopyTo "Clipboard" },
+  { keys = "CTRL+SHIFT  V",   desc = "Paste from clipboard",                  action = act.PasteFrom "Clipboard" },
+  { keys = "CTRL+SHIFT  F",   desc = "Fullscreen",                            action = act.ToggleFullScreen },
+  { keys = "CTRL  +",         desc = "Font size increase",                    action = act.IncreaseFontSize },
+  { keys = "CTRL  -",         desc = "Font size decrease",                    action = act.DecreaseFontSize },
+  { keys = "CTRL  0",         desc = "Font size reset",                       action = act.ResetFontSize },
 }
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Key table
+-- Key table — actions reference LEGEND entries or PICK_WORKSPACE directly.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 config.keys = {
 
-  -- ── Legend (ALT+/ — no LEADER, no conflict with LEADER+h pane nav) ───────
+  -- ── Legend overlay: ALT+/ opens picker; Enter on any entry executes it ────
   {
     key = "/", mods = "ALT",
     action = wezterm.action_callback(function(window, pane)
       local choices = {}
-      for _, entry in ipairs(LEGEND) do
+      for i, entry in ipairs(LEGEND) do
         table.insert(choices, {
-          id    = "",
+          id    = tostring(i),
           label = string.format("%-24s  %s", entry.keys, entry.desc),
         })
       end
       window:perform_action(act.InputSelector {
-        title   = "Key Bindings — Esc to dismiss",
-        choices = choices,
-        fuzzy   = true,
-        action  = wezterm.action_callback(function() end),
-      }, pane)
-    end),
-  },
-
-  -- ── Workspaces ────────────────────────────────────────────────────────────
-  -- ALT+P     open workspace picker (● open · ○ closed, fuzzy search)
-  -- ALT+↑/↓   cycle through all workspaces
-  -- ALT+0     launcher / help
-  { key = "0",        mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
-  { key = "UpArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
-  { key = "DownArrow",mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
-  {
-    key = "p", mods = "ALT",
-    action = wezterm.action_callback(function(window, pane)
-      local choices = {}
-      for _, p in ipairs(PROJECTS) do
-        local open = workspace_exists(p.id)
-        table.insert(choices, {
-          id    = p.id,
-          label = (open and "● " or "○ ") .. p.label,
-        })
-      end
-      window:perform_action(act.InputSelector {
-        title   = "Workspace  (● open · ○ closed)",
+        title   = "Key Bindings — Enter to run · Esc to dismiss",
         choices = choices,
         fuzzy   = true,
         action  = wezterm.action_callback(function(w, p2, id, _)
-          if id and id ~= "" then w:perform_action(open_project(id), p2) end
+          local idx   = tonumber(id)
+          local entry = idx and LEGEND[idx]
+          if entry and entry.action then
+            w:perform_action(entry.action, p2)
+          end
         end),
       }, pane)
     end),
   },
 
+  -- ── Workspaces ────────────────────────────────────────────────────────────
+  { key = "0",         mods = "ALT", action = LEGEND[4].action  },  -- launcher
+  { key = "UpArrow",   mods = "ALT", action = LEGEND[2].action  },  -- prev workspace
+  { key = "DownArrow", mods = "ALT", action = LEGEND[3].action  },  -- next workspace
+  { key = "p",         mods = "ALT", action = LEGEND[1].action  },  -- picker
+
   -- ── Tabs ──────────────────────────────────────────────────────────────────
-  -- ALT+←/→  cycle tabs (same modifier, opposite axis to workspace cycling)
-  { key = "LeftArrow",  mods = "ALT", action = act.ActivateTabRelative(-1) },
-  { key = "RightArrow", mods = "ALT", action = act.ActivateTabRelative(1)  },
-  { key = "t", mods = "CTRL|SHIFT",   action = act.SpawnTab "CurrentPaneDomain" },
-  { key = "w", mods = "CTRL|SHIFT",   action = act.CloseCurrentTab { confirm = true } },
+  { key = "LeftArrow",  mods = "ALT",       action = LEGEND[6].action  },  -- prev tab
+  { key = "RightArrow", mods = "ALT",       action = LEGEND[7].action  },  -- next tab
+  { key = "t",          mods = "CTRL|SHIFT", action = LEGEND[8].action  },  -- new tab
+  { key = "w",          mods = "CTRL|SHIFT", action = LEGEND[9].action  },  -- close tab
 
   -- ── Panes ─────────────────────────────────────────────────────────────────
-  { key = "|", mods = "LEADER", action = act.SplitHorizontal { domain = "CurrentPaneDomain" } },
-  { key = "-", mods = "LEADER", action = act.SplitVertical   { domain = "CurrentPaneDomain" } },
-  { key = "h", mods = "LEADER", action = act.ActivatePaneDirection "Left"  },
-  { key = "j", mods = "LEADER", action = act.ActivatePaneDirection "Down"  },
-  { key = "k", mods = "LEADER", action = act.ActivatePaneDirection "Up"    },
-  { key = "l", mods = "LEADER", action = act.ActivatePaneDirection "Right" },
-  { key = "z", mods = "LEADER", action = act.TogglePaneZoomState },
+  { key = "|", mods = "LEADER", action = LEGEND[11].action },  -- split right
+  { key = "-", mods = "LEADER", action = LEGEND[12].action },  -- split down
+  { key = "h", mods = "LEADER", action = LEGEND[13].action },  -- focus left
+  { key = "j", mods = "LEADER", action = LEGEND[14].action },  -- focus down
+  { key = "k", mods = "LEADER", action = LEGEND[15].action },  -- focus up
+  { key = "l", mods = "LEADER", action = LEGEND[16].action },  -- focus right
+  { key = "z", mods = "LEADER", action = LEGEND[17].action },  -- zoom
 
   -- ── Utility ───────────────────────────────────────────────────────────────
-  { key = "c", mods = "LEADER",     action = act.ActivateCopyMode },
-  { key = "c", mods = "CTRL|SHIFT", action = act.CopyTo "Clipboard" },
-  { key = "v", mods = "CTRL|SHIFT", action = act.PasteFrom "Clipboard" },
-  { key = "f", mods = "CTRL|SHIFT", action = act.ToggleFullScreen },
-  { key = "=", mods = "CTRL",       action = act.IncreaseFontSize },
-  { key = "-", mods = "CTRL",       action = act.DecreaseFontSize },
-  { key = "0", mods = "CTRL",       action = act.ResetFontSize },
+  { key = "c", mods = "LEADER",     action = LEGEND[20].action },  -- copy mode
+  { key = "c", mods = "CTRL|SHIFT", action = LEGEND[21].action },  -- copy
+  { key = "v", mods = "CTRL|SHIFT", action = LEGEND[22].action },  -- paste
+  { key = "f", mods = "CTRL|SHIFT", action = LEGEND[23].action },  -- fullscreen
+  { key = "=", mods = "CTRL",       action = LEGEND[24].action },  -- font +
+  { key = "-", mods = "CTRL",       action = LEGEND[25].action },  -- font -
+  { key = "0", mods = "CTRL",       action = LEGEND[26].action },  -- font reset
 }
 
 -- ─────────────────────────────────────────────────────────────────────────────
