@@ -123,6 +123,8 @@ ALT+/  to see all keys
 - [x] Auto-discovered repos from `REPO_ROOTS` (filters files by extension)
 - [x] New workspace from any path — creates directory if missing
 - [x] Status bar — open workspaces, attention dots, legend hint, clock
+- [x] Tab title turns amber when the tab has unseen output
+- [x] Toast notification on terminal bell — workspace + tab name in the alert
 - [x] Session state — 30s flush + graceful-close save
 - [x] Startup banner with `[Enter]` pause
 - [x] `ALT+/` executable legend — LEGEND is single source of truth

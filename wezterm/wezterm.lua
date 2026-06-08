@@ -509,11 +509,37 @@ wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, _hover, max_wi
     title = wezterm.truncate_right(title, max_width - 4)
   end
   local idx = tab.tab_index + 1
+
+  -- Active tab: bright. Inactive with unseen output: amber (matches status bar). Idle: muted.
+  local fg
+  if tab.is_active then
+    fg = "#c0caf5"
+  elseif tab.active_pane.has_unseen_output then
+    fg = "#d4943a"
+  else
+    fg = "#565f89"
+  end
+
   return {
     { Background = { Color = tab.is_active and "#1a1b26" or "#16161e" } },
-    { Foreground = { Color = tab.is_active and "#c0caf5" or "#565f89" } },
+    { Foreground = { Color = fg } },
     { Text = " " .. idx .. ":" .. title .. " " },
   }
+end)
+
+-- Toast notification on terminal bell.
+-- Any program can trigger this with: printf '\a'
+-- Shell prompt hooks, Claude Code stop hooks, and long-running scripts use this.
+wezterm.on("bell", function(window, pane)
+  local tab   = pane:tab()
+  local label = tab and tab:get_title() or "terminal"
+  local ws    = window:active_workspace()
+  window:toast_notification(
+    "WezTerm  ·  " .. ws,
+    label .. " — needs attention",
+    nil,
+    4000
+  )
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
