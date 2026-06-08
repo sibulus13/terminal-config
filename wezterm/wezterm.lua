@@ -322,58 +322,72 @@ config.default_prog      = { BASH, "-l" }
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Status bar
--- Left : open workspaces with attention indicators (● = unseen output)
--- Right: clock
+-- Left : currently OPEN workspaces only — active=crimson, other=muted, ●=attention
+-- Right: persistent legend hint + clock
 -- ─────────────────────────────────────────────────────────────────────────────
 
 wezterm.on("update-right-status", function(window, _pane)
   local current_ws = window:active_workspace()
 
-  -- Index open workspaces for O(1) lookup
+  -- Collect open workspaces, preserving projects.lua order
   local open_wins = {}
   for _, win in ipairs(mux.all_windows()) do
     open_wins[win:get_workspace()] = win
   end
 
-  -- Show ALL projects always — closed=dim, open=muted, active=crimson+bold
   local left_parts = { { Text = " " } }
+  local any_open   = false
+
   for _, proj in ipairs(PROJECTS) do
-    local win       = open_wins[proj.id]
+    local win = open_wins[proj.id]
+    if not win then goto continue end   -- skip closed workspaces
+
+    any_open = true
     local is_active = proj.id == current_ws
     local attention = false
-
-    if win then
-      for _, tab in ipairs(win:tabs()) do
-        for _, p in ipairs(tab:panes()) do
-          if p:has_unseen_output() then attention = true; break end
-        end
-        if attention then break end
+    for _, tab in ipairs(win:tabs()) do
+      for _, p in ipairs(tab:panes()) do
+        if p:has_unseen_output() then attention = true; break end
       end
+      if attention then break end
     end
 
-    local prefix = attention and "● " or (win and "" or "")
-    local text   = string.format(" %s%s ", prefix, proj.label)
+    local label = string.format(" %s%s ", attention and "● " or "", proj.label)
 
     if is_active then
       table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
-      table.insert(left_parts, { Foreground = { Color = "#e8378e" } })  -- crimson: active
+      table.insert(left_parts, { Foreground = { Color = "#e8378e" } })   -- crimson: focused
     elseif attention then
       table.insert(left_parts, { Attribute = { Intensity = "Normal" } })
-      table.insert(left_parts, { Foreground = { Color = "#d4943a" } })  -- amber: needs attention
-    elseif win then
-      table.insert(left_parts, { Attribute = { Intensity = "Normal" } })
-      table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })  -- muted rose: open
+      table.insert(left_parts, { Foreground = { Color = "#d4943a" } })   -- amber: needs attention
     else
       table.insert(left_parts, { Attribute = { Intensity = "Normal" } })
-      table.insert(left_parts, { Foreground = { Color = "#3a1a4a" } })  -- near-invisible: closed
+      table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })   -- muted rose: open
     end
-    table.insert(left_parts, { Text = text })
+    table.insert(left_parts, { Text = label })
+
+    ::continue::
+  end
+
+  -- Nothing open yet: nudge user toward the picker
+  if not any_open then
+    table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
+    table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
+    table.insert(left_parts, { Text = " ALT+P" })
+    table.insert(left_parts, { Foreground = { Color = "#6b3080" } })
+    table.insert(left_parts, { Text = " open a workspace " })
   end
 
   window:set_left_status(wezterm.format(left_parts))
 
+  -- Right: persistent legend reminder + clock
   local time = wezterm.strftime "%H:%M"
   window:set_right_status(wezterm.format({
+    { Attribute = { Intensity = "Normal" } },
+    { Foreground = { Color = "#6b3080" } },
+    { Text = "ALT+/  legend" },
+    { Foreground = { Color = "#3a1a4a" } },
+    { Text = "  │  " },
     { Foreground = { Color = "#6b3080" } },
     { Text = time .. "  " },
   }))
@@ -518,5 +532,25 @@ config.keys = {
 -- Hyperlinks
 -- ─────────────────────────────────────────────────────────────────────────────
 config.hyperlink_rules = wezterm.default_hyperlink_rules()
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Duplicate binding validator
+-- Scans config.keys for (key, mods) collisions at load time.
+-- Warnings appear in WezTerm's log viewer: Help > Show Debug Log Overlay
+-- ─────────────────────────────────────────────────────────────────────────────
+do
+  local seen = {}
+  for i, b in ipairs(config.keys) do
+    local id = string.format("[%s] %s", b.mods or "NONE", b.key)
+    if seen[id] then
+      wezterm.log_warn(string.format(
+        "DUPLICATE BINDING at entry %d — %s (first seen at entry %d). Last definition wins.",
+        i, id, seen[id]
+      ))
+    else
+      seen[id] = i
+    end
+  end
+end
 
 return config
