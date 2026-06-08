@@ -5,11 +5,10 @@ cat << 'EOF'
 ║   WezTerm  ·  LEADER = ALT+Z  (1.5 s)           ║
 ╠══════════════════════════════════════════════════╣
 ║  WORKSPACES                                      ║
-║  ALT + 0           launcher / help               ║
-║  ALT + 1–7         open / switch workspace       ║
-║  ALT + ← / →       cycle workspaces              ║
-║  ALT + P           fuzzy project picker          ║
+║  ALT + P           open workspace (● = open)     ║
 ║  ALT+Z  O          open any repo by path         ║
+║  ALT + ← / →       cycle open workspaces         ║
+║  ALT + 0           launcher / help               ║
 ╠══════════════════════════════════════════════════╣
 ║  TABS                                            ║
 ║  ALT + [ / ]       prev / next tab               ║

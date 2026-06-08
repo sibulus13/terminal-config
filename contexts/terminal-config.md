@@ -32,7 +32,7 @@
 
 ## In Progress
 
-_Nothing actively in flight right now._
+_Nothing actively in flight right now (just completed workspace UX refactor — see decisions below)._
 
 ---
 
@@ -56,6 +56,10 @@ _Nothing actively in flight right now._
 | Zellij via WSL2, not native Windows | Native Zellij Windows binary has PTY issues as of mid-2025 |
 | Context files: `~/contexts/<project>.md` | Watch-able by Zellij sidebar, editable by Claude/user |
 | Single `contexts/terminal-config.md` per project | One file = one source of truth; no hunting across multiple docs |
+| Removed ALT+1-7 workspace shortcuts | User wants command-palette UX, not slot memorization |
+| `ALT+P` picker built dynamically | Shows ● for open workspaces vs. ○ closed — live status |
+| Session state saves `active_tab_idx` not `tab_id` | tab_id resets each launch; index is stable across restarts |
+| `LEADER+O` (open by path) now single-window | Was using `mux.spawn_window` — fixed to `SwitchToWorkspace` |
 
 ---
 

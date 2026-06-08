@@ -74,28 +74,31 @@ local function capture_state()
   for _, win in ipairs(mux.all_windows()) do
     local ws = win:get_workspace()
     if not state.workspaces[ws] then
-      local tabs_state = {}
+      local tabs_state   = {}
+      local active_tab_id = win:active_tab():tab_id()
+      local active_tab_idx = 0
       for tab_idx, tab in ipairs(win:tabs()) do
         local pane    = tab:active_pane()
         local cwd_uri = pane:get_current_working_dir()
         local cwd_str = cwd_uri and cwd_uri.file_path or ""
-        -- Find the project tab definition for this workspace+tab to know its resume flag
         local resume_cmd = nil
         for _, proj in ipairs(PROJECTS) do
           if proj.id == ws and proj.tabs[tab_idx] and proj.tabs[tab_idx].resume then
             resume_cmd = proj.tabs[tab_idx].cmd
           end
         end
+        if tab:tab_id() == active_tab_id then
+          active_tab_idx = tab_idx - 1  -- 0-based, matches ActivateTab(n)
+        end
         table.insert(tabs_state, {
           title      = tab:get_title(),
           cwd        = cwd_str,
           resume_cmd = resume_cmd,
-          tab_idx    = tab_idx - 1,
         })
       end
       state.workspaces[ws] = {
-        active_tab = win:active_tab():tab_id(),
-        tabs       = tabs_state,
+        active_tab_idx = active_tab_idx,
+        tabs           = tabs_state,
       }
     end
   end
@@ -202,7 +205,14 @@ local function open_project(proj_id)
         apply_split(new_tab, t.layout, t.title, proj.cwd)
       end
 
-      tabs[1]:activate()
+      -- Restore the tab that was active when this workspace was last closed
+      local restore_idx = 0
+      if saved and saved.workspaces and saved.workspaces[proj_id] then
+        restore_idx = saved.workspaces[proj_id].active_tab_idx or 0
+      end
+      local all_tabs = target_win:tabs()
+      local target_tab = all_tabs[restore_idx + 1] or all_tabs[1]
+      if target_tab then target_tab:activate() end
     end)
   end)
 end
@@ -325,12 +335,10 @@ wezterm.on("update-right-status", function(window, _pane)
     open_wins[win:get_workspace()] = win
   end
 
-  -- Walk PROJECTS in definition order so ALT+1-7 indices are stable
   local left_parts = { { Text = "  " } }
-  for i, proj in ipairs(PROJECTS) do
+  for _, proj in ipairs(PROJECTS) do
     local win = open_wins[proj.id]
     if win then
-      -- Check every pane in every tab for unseen output
       local attention = false
       for _, tab in ipairs(win:tabs()) do
         for _, p in ipairs(tab:panes()) do
@@ -341,14 +349,11 @@ wezterm.on("update-right-status", function(window, _pane)
 
       local is_active = proj.id == current_ws
       local dot       = attention and "● " or ""
-      -- Shorten id to first 8 chars so the bar doesn't overflow
-      local short_id  = proj.id:sub(1, 8)
-      local label     = string.format(" %s ALT+%d %s  ", dot, i, short_id)
+      local label     = string.format(" %s%s  ", dot, proj.label)
 
       table.insert(left_parts, { Attribute = { Intensity = is_active and "Bold" or "Normal" } })
-      -- Active: bright crimson. Inactive: visible muted rose. Attention dot: bright amber.
       if attention and not is_active then
-        table.insert(left_parts, { Foreground = { Color = "#d4943a" } })  -- amber when needs attention
+        table.insert(left_parts, { Foreground = { Color = "#d4943a" } })
       else
         table.insert(left_parts, { Foreground = { Color = is_active and "#e8378e" or "#9b6aaa" } })
       end
@@ -356,15 +361,15 @@ wezterm.on("update-right-status", function(window, _pane)
     end
   end
 
-  -- When no project workspaces open, show a visible hint
+  -- Empty-state hint: no projects open yet
   if #left_parts == 1 then
     table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
     table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
-    table.insert(left_parts, { Text = "  ALT+1-7" })
+    table.insert(left_parts, { Text = "  ALT+P" })
     table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })
     table.insert(left_parts, { Text = " open workspace  " })
     table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
-    table.insert(left_parts, { Text = "ALT+Z H" })
+    table.insert(left_parts, { Text = "LEADER+H" })
     table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })
     table.insert(left_parts, { Text = " key legend  " })
   end
@@ -403,14 +408,8 @@ end)
 
 config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 1500 }
 
--- Build workspace-switcher choices list at config load time
-local ws_choices = {}
-for i, p in ipairs(PROJECTS) do
-  table.insert(ws_choices, {
-    id    = p.id,
-    label = string.format("[%d] %s", i, p.label),
-  })
-end
+-- Workspace picker choices are built dynamically so open/closed status is live.
+-- Called inside the ALT+P action_callback each time the picker is opened.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Macro legend (shown by LEADER ?)
@@ -418,11 +417,10 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 local LEGEND = {
-  { keys = "ALT  0",            desc = "Return to launcher / help workspace" },
-  { keys = "ALT  1-7",          desc = "Open / switch to numbered workspace" },
-  { keys = "ALT  ← / →",        desc = "Cycle workspaces prev / next" },
-  { keys = "ALT  P",            desc = "Fuzzy project picker (by name)" },
-  { keys = "LEADER  O",         desc = "Open any directory as workspace by path" },
+  { keys = "ALT  P",            desc = "Open workspace  (● = already open, fuzzy search)" },
+  { keys = "LEADER  O",         desc = "Open any repo path as ad-hoc workspace" },
+  { keys = "ALT  ← / →",        desc = "Cycle between open workspaces" },
+  { keys = "ALT  0",            desc = "Return to launcher / help" },
   { keys = "──────────────────────", desc = "─── Tabs ───────────────────────" },
   { keys = "ALT  [ / ]",        desc = "Previous / next tab" },
   { keys = "CTRL+ALT  1-4",     desc = "Jump to tab 1–4 in current workspace" },
@@ -479,38 +477,46 @@ config.keys = {
     },
   },
 
-  -- ── Workspace: ALT+0-7 (0 = launcher/help, 1-7 = projects) ──────────────
-  { key = "0",    mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
-  { key = "1",    mods = "ALT", action = open_project(PROJECTS[1].id) },
-  { key = "2",    mods = "ALT", action = open_project(PROJECTS[2].id) },
-  { key = "3",    mods = "ALT", action = open_project(PROJECTS[3].id) },
-  { key = "4",    mods = "ALT", action = open_project(PROJECTS[4].id) },
-  { key = "5",    mods = "ALT", action = open_project(PROJECTS[5].id) },
-  { key = "6",    mods = "ALT", action = open_project(PROJECTS[6].id) },
-  { key = "7",    mods = "ALT", action = open_project(PROJECTS[7].id) },
-  -- Cycle workspaces with ALT+Left/Right
-  { key = "LeftArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
-  { key = "RightArrow", mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
-  -- ALT+P → fuzzy project picker (single chord, no LEADER)
+  -- ── Workspace navigation ──────────────────────────────────────────────────
+
+  -- ALT+0 → launcher / help (always available)
+  { key = "0", mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
+
+  -- ALT+P → workspace command palette (PRIMARY way to open a workspace)
+  -- Builds choices dynamically so ● marks already-open workspaces.
   {
     key = "p", mods = "ALT",
-    action = act.InputSelector {
-      title   = "Open Project Workspace",
-      choices = ws_choices,
-      fuzzy   = true,
-      action  = wezterm.action_callback(function(window, pane, id, _label)
-        if id and id ~= "" then window:perform_action(open_project(id), pane) end
-      end),
-    },
+    action = wezterm.action_callback(function(window, pane)
+      local choices = {}
+      for _, p in ipairs(PROJECTS) do
+        local open  = workspace_exists(p.id)
+        table.insert(choices, {
+          id    = p.id,
+          label = (open and "● " or "  ") .. p.label,
+        })
+      end
+      window:perform_action(act.InputSelector {
+        title   = "Open Workspace  (● already open, fuzzy search by name)",
+        choices = choices,
+        fuzzy   = true,
+        action  = wezterm.action_callback(function(w, p2, id, _label)
+          if id and id ~= "" then w:perform_action(open_project(id), p2) end
+        end),
+      }, pane)
+    end),
   },
-  -- LEADER+O → open any directory as an ad-hoc workspace by path
+
+  -- ALT+Left / ALT+Right → cycle between open workspaces
+  { key = "LeftArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
+  { key = "RightArrow", mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
+
+  -- LEADER+O → open any repo path as an ad-hoc workspace (no projects.lua entry needed)
   {
     key = "o", mods = "LEADER",
     action = act.PromptInputLine {
       description = "Workspace path  (e.g. D:/repo/my-project)",
       action = wezterm.action_callback(function(window, pane, path)
         if not path or path == "" then return end
-        -- Derive a slug from the last path component
         local base = path:match("([^/\\]+)[/\\]?$") or path
         local id   = base:lower():gsub("[^a-z0-9]+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
         if id == "" then id = "adhoc" end
@@ -518,14 +524,23 @@ config.keys = {
           window:perform_action(act.SwitchToWorkspace { name = id }, pane)
           return
         end
-        local tab, _, _win = mux.spawn_window({
-          workspace = id,
-          cwd       = path,
-          args      = { BASH, "-l" },
-        })
-        tab:set_title("shell")
-        apply_split(tab, "hsplit", "shell", path)
-        window:perform_action(act.SwitchToWorkspace { name = id }, pane)
+        -- Single-window: switch current window to new workspace, set up panes after
+        window:perform_action(act.SwitchToWorkspace {
+          name  = id,
+          spawn = { cwd = path, args = { BASH, "-l" } },
+        }, pane)
+        wezterm.time.call_after(0.15, function()
+          for _, win in ipairs(mux.all_windows()) do
+            if win:get_workspace() == id then
+              local tabs = win:tabs()
+              if tabs[1] then
+                tabs[1]:set_title("shell")
+                apply_split(tabs[1], "hsplit", "shell", path)
+              end
+              break
+            end
+          end
+        end)
       end),
     },
   },
