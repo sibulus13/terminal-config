@@ -19,6 +19,14 @@ local DEFAULT_LAYOUTS = {
   sys   = "hsplit",
 }
 
+-- Root folders scanned for immediate subdirectories in the workspace picker.
+-- Repos found here that aren't in PROJECTS appear as an "ad-hoc" section.
+local REPO_ROOTS = {
+  "D:/repo",
+  "D:/repo/web",
+  "D:/repo/Stock",
+}
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Session state helpers
 -- Read: dofile the auto-generated state table (or return nil if missing/invalid)
@@ -217,23 +225,94 @@ local function open_project(proj_id)
   end)
 end
 
+-- Open any directory path as a workspace (ad-hoc, not in projects.lua).
+-- Creates the directory if it doesn't exist, then switches to a new workspace
+-- with a single bash shell. The workspace id is derived from the dir basename.
+local function open_adhoc(window, pane, dir_path)
+  -- normalize slashes, strip trailing separator
+  dir_path = dir_path:gsub("\\", "/"):gsub("/+$", "")
+  local basename = dir_path:match("([^/]+)$") or dir_path
+  local ws_id = basename:lower():gsub("[^%w%-]", "-")
+
+  wezterm.run_child_process({
+    "powershell.exe", "-NoProfile", "-Command",
+    "New-Item -ItemType Directory -Force -Path '" .. dir_path .. "' | Out-Null",
+  })
+
+  if workspace_exists(ws_id) then
+    window:perform_action(act.SwitchToWorkspace { name = ws_id }, pane)
+    return
+  end
+
+  window:perform_action(act.SwitchToWorkspace {
+    name  = ws_id,
+    spawn = { cwd = dir_path, args = { BASH } },
+  }, pane)
+end
+
 -- Workspace picker: defined once, shared by both LEGEND and config.keys.
--- action_callback returns a WezTermAction object usable with perform_action.
+-- Shows: pinned projects | discovered repos from REPO_ROOTS | [+] new workspace prompt.
 local PICK_WORKSPACE = wezterm.action_callback(function(window, pane)
+  -- Pinned projects section
   local choices = {}
+  local known_cwds = {}
   for _, p in ipairs(PROJECTS) do
+    known_cwds[p.cwd] = true
     local open = workspace_exists(p.id)
     table.insert(choices, {
       id    = p.id,
       label = (open and "● " or "○ ") .. p.label,
     })
   end
+
+  -- Discovered repos: immediate subdirs of REPO_ROOTS not already in PROJECTS
+  local discovered = {}
+  for _, root in ipairs(REPO_ROOTS) do
+    for _, d in ipairs(wezterm.glob(root .. "/*/")) do
+      local path = d:gsub("[\\/]+$", "")
+      if not known_cwds[path] then
+        known_cwds[path] = true
+        table.insert(discovered, path)
+      end
+    end
+  end
+
+  if #discovered > 0 then
+    table.insert(choices, { id = "", label = "── repos ────────────────────────────────" })
+    for _, path in ipairs(discovered) do
+      local name = path:match("([^/]+)$") or path
+      table.insert(choices, {
+        id    = "__path__:" .. path,
+        label = "○ " .. name .. "  ‹" .. path .. "›",
+      })
+    end
+  end
+
+  -- New workspace entry
+  table.insert(choices, { id = "", label = "─────────────────────────────────────────" })
+  table.insert(choices, { id = "__new__", label = "[+]  New workspace  (type a path)" })
+
   window:perform_action(act.InputSelector {
     title   = "Workspace  (● open · ○ closed)",
     choices = choices,
     fuzzy   = true,
     action  = wezterm.action_callback(function(w, p2, id, _)
-      if id and id ~= "" then w:perform_action(open_project(id), p2) end
+      if not id or id == "" then return end
+      if id == "__new__" then
+        w:perform_action(act.PromptInputLine {
+          description = "Directory path (will be created if missing):",
+          action = wezterm.action_callback(function(w2, p3, line)
+            if line and line ~= "" then open_adhoc(w2, p3, line) end
+          end),
+        }, p2)
+      else
+        local repo_path = id:match("^__path__:(.+)$")
+        if repo_path then
+          open_adhoc(w, p2, repo_path)
+        else
+          w:perform_action(open_project(id), p2)
+        end
+      end
     end),
   }, pane)
 end)

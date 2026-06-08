@@ -64,31 +64,27 @@ WezTerm opens  →  launcher workspace  →  help tab shows banner + [Enter]
 
 ### Open a known project
 ```
-ALT+1–7              direct jump by slot number
-ALT+P                fuzzy picker (type part of name, Enter to confirm)
-ALT+← / ALT+→        cycle through all open workspaces
+ALT+P                fuzzy picker — shows pinned projects, discovered repos, [+] new
+ALT+↑ / ALT+↓        cycle through open workspaces
 ALT+0                return to launcher/help
 ```
 
 ### Open any repo (not in projects.lua)
 ```
-ALT+Z → O           PromptInputLine appears
-type path           e.g. D:/repo/side-project
-Enter               workspace created from directory basename, hsplit shell
+ALT+P → scroll to repo  discovered repos from REPO_ROOTS appear below pinned projects
+ALT+P → [+] New         PromptInputLine appears → type any path → workspace created
+                         (directory is created if it doesn't exist)
 ```
 
-### Add a permanent new project
+### Add a permanent pinned project
 ```
-ALT+Z → N           opens new-workspace.sh wizard tab
-enter id / label / cwd
-wizard appends entry to projects.lua
-WezTerm hot-reloads  →  ALT+8 (or next slot) available immediately
+Edit wezterm/projects.lua  add an entry with id/label/cwd/tabs
+WezTerm hot-reloads        new project appears immediately in ALT+P picker
 ```
 
 ### Navigate within a workspace
 ```
-ALT+[ / ALT+]        prev / next tab
-CTRL+ALT+1–4         jump to tab by number
+ALT+← / ALT+→        prev / next tab
 LEADER |             split pane right
 LEADER -             split pane down
 LEADER h/j/k/l       move between panes (vim-style)
@@ -97,7 +93,7 @@ LEADER z             zoom / unzoom active pane
 
 ### Get help
 ```
-ALT+Z → H            InputSelector overlay — full legend, fuzzy searchable
+ALT+/                InputSelector overlay — full legend, fuzzy searchable, Enter to run
 help tab             startup banner (re-open via ALT+0, tab 1)
 ```
 
