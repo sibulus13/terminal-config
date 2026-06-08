@@ -5,39 +5,27 @@ cat << 'EOF'
 ║   WezTerm  ·  LEADER = ALT+Z  (1.5 s)           ║
 ╠══════════════════════════════════════════════════╣
 ║  WORKSPACES                                      ║
-║  ALT + P           open workspace (● = open)     ║
-║  ALT+Z  O          open any repo by path         ║
-║  ALT + ← / →       cycle open workspaces         ║
+║  ALT + P           open / launch workspace       ║
+║  ALT + ↑ / ↓       cycle workspaces              ║
 ║  ALT + 0           launcher / help               ║
 ╠══════════════════════════════════════════════════╣
 ║  TABS                                            ║
-║  ALT + [ / ]       prev / next tab               ║
-║  CTRL+ALT 1–4      jump to tab by number         ║
-║  CTRL+SHIFT T      new tab (same dir)            ║
+║  ALT + ← / →       prev / next tab               ║
+║  CTRL+SHIFT T      new tab                       ║
 ║  CTRL+SHIFT W      close tab                     ║
 ╠══════════════════════════════════════════════════╣
 ║  PANES                                           ║
 ║  LEADER |          split right                   ║
 ║  LEADER -          split down                    ║
-║  LEADER h/j/k/l    move between panes            ║
+║  LEADER h/j/k/l    navigate panes                ║
 ║  LEADER z          zoom / unzoom pane            ║
 ╠══════════════════════════════════════════════════╣
-║  MACROS                                          ║
-║  LEADER r          registry regen                ║
-║  LEADER b          backtest broad sweep          ║
-║  LEADER d          pnpm dev                      ║
-║  ALT+Z  N          new workspace wizard          ║
-║  ALT+Z  T          task-complete toast           ║
-╠══════════════════════════════════════════════════╣
 ║  UTILITY                                         ║
-║  ALT+Z  H          full key legend overlay       ║
-║  LEADER c          copy mode (vi scroll)         ║
+║  ALT + /           key legend overlay            ║
 ║  CTRL+SHIFT F      fullscreen                    ║
-║  CTRL  + / - / 0   font size inc / dec / reset   ║
+║  CTRL  + / - / 0   font size                     ║
 ╚══════════════════════════════════════════════════╝
 EOF
 printf '\e[0m'
-# Pause so the banner stays visible before the shell takes over.
-# If .bashrc calls `clear`, exec-ing without this wipes the banner instantly.
 read -rsp $'  \e[35m[Enter]\e[0m to open shell...\n' _
 exec bash -l

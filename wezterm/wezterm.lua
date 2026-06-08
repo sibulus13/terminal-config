@@ -329,49 +329,45 @@ config.default_prog      = { BASH, "-l" }
 wezterm.on("update-right-status", function(window, _pane)
   local current_ws = window:active_workspace()
 
-  -- Index open workspaces by id for O(1) lookup
+  -- Index open workspaces for O(1) lookup
   local open_wins = {}
   for _, win in ipairs(mux.all_windows()) do
     open_wins[win:get_workspace()] = win
   end
 
-  local left_parts = { { Text = "  " } }
+  -- Show ALL projects always — closed=dim, open=muted, active=crimson+bold
+  local left_parts = { { Text = " " } }
   for _, proj in ipairs(PROJECTS) do
-    local win = open_wins[proj.id]
+    local win       = open_wins[proj.id]
+    local is_active = proj.id == current_ws
+    local attention = false
+
     if win then
-      local attention = false
       for _, tab in ipairs(win:tabs()) do
         for _, p in ipairs(tab:panes()) do
           if p:has_unseen_output() then attention = true; break end
         end
         if attention then break end
       end
-
-      local is_active = proj.id == current_ws
-      local dot       = attention and "● " or ""
-      local label     = string.format(" %s%s  ", dot, proj.label)
-
-      table.insert(left_parts, { Attribute = { Intensity = is_active and "Bold" or "Normal" } })
-      if attention and not is_active then
-        table.insert(left_parts, { Foreground = { Color = "#d4943a" } })
-      else
-        table.insert(left_parts, { Foreground = { Color = is_active and "#e8378e" or "#9b6aaa" } })
-      end
-      table.insert(left_parts, { Text = label })
     end
-  end
 
-  -- Empty-state hint: no projects open yet
-  if #left_parts == 1 then
-    table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
-    table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
-    table.insert(left_parts, { Text = "  ALT+P" })
-    table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })
-    table.insert(left_parts, { Text = " open workspace  " })
-    table.insert(left_parts, { Foreground = { Color = "#c4185c" } })
-    table.insert(left_parts, { Text = "LEADER+H" })
-    table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })
-    table.insert(left_parts, { Text = " key legend  " })
+    local prefix = attention and "● " or (win and "" or "")
+    local text   = string.format(" %s%s ", prefix, proj.label)
+
+    if is_active then
+      table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
+      table.insert(left_parts, { Foreground = { Color = "#e8378e" } })  -- crimson: active
+    elseif attention then
+      table.insert(left_parts, { Attribute = { Intensity = "Normal" } })
+      table.insert(left_parts, { Foreground = { Color = "#d4943a" } })  -- amber: needs attention
+    elseif win then
+      table.insert(left_parts, { Attribute = { Intensity = "Normal" } })
+      table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })  -- muted rose: open
+    else
+      table.insert(left_parts, { Attribute = { Intensity = "Normal" } })
+      table.insert(left_parts, { Foreground = { Color = "#3a1a4a" } })  -- near-invisible: closed
+    end
+    table.insert(left_parts, { Text = text })
   end
 
   window:set_left_status(wezterm.format(left_parts))
@@ -408,8 +404,7 @@ end)
 
 config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 1500 }
 
--- Workspace picker choices are built dynamically so open/closed status is live.
--- Called inside the ALT+P action_callback each time the picker is opened.
+-- Workspace picker choices built dynamically inside ALT+P callback (live open/closed status).
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Macro legend (shown by LEADER ?)
@@ -417,48 +412,26 @@ config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 1500 }
 -- ─────────────────────────────────────────────────────────────────────────────
 
 local LEGEND = {
-  { keys = "ALT  P",            desc = "Open workspace  (● = already open, fuzzy search)" },
-  { keys = "LEADER  O",         desc = "Open any repo path as ad-hoc workspace" },
-  { keys = "ALT  ← / →",        desc = "Cycle between open workspaces" },
-  { keys = "ALT  0",            desc = "Return to launcher / help" },
-  { keys = "──────────────────────", desc = "─── Tabs ───────────────────────" },
-  { keys = "ALT  [ / ]",        desc = "Previous / next tab" },
-  { keys = "CTRL+ALT  1-4",     desc = "Jump to tab 1–4 in current workspace" },
-  { keys = "CTRL+SHIFT  T",     desc = "New tab (same directory)" },
-  { keys = "CTRL+SHIFT  W",     desc = "Close current tab" },
-  { keys = "──────────────────────", desc = "─── Panes ──────────────────────" },
-  { keys = "LEADER  |",         desc = "Split pane right" },
-  { keys = "LEADER  -",         desc = "Split pane down" },
-  { keys = "LEADER  h/j/k/l",   desc = "Move between panes (vim-style)" },
-  { keys = "LEADER  z",         desc = "Zoom / unzoom active pane" },
-  { keys = "──────────────────────", desc = "─── Stock Research macros ──────" },
-  { keys = "LEADER  r",         desc = "Registry regen (generate_live_registry)" },
-  { keys = "LEADER  b",         desc = "Broad sweep (backtest_broad_sweep)" },
-  { keys = "LEADER  s",         desc = "System report" },
-  { keys = "LEADER  p",         desc = "Tail paper engine log" },
-  { keys = "──────────────────────", desc = "─── Web project macros ─────────" },
-  { keys = "LEADER  d",         desc = "pnpm dev" },
-  { keys = "LEADER  i",         desc = "pnpm install" },
-  { keys = "──────────────────────", desc = "─── Utility ────────────────────" },
-  { keys = "LEADER  N",          desc = "New workspace wizard (add to projects.lua)" },
-  { keys = "LEADER  T",         desc = "Fire toast: task complete (current workspace)" },
-  { keys = "LEADER  H",         desc = "Show this legend (you are here)" },
-  { keys = "LEADER  c",         desc = "Copy mode (vi-style scroll + select)" },
-  { keys = "LEADER  f",         desc = "Search scrollback" },
-  { keys = "CTRL+SHIFT  C",     desc = "Copy to clipboard" },
-  { keys = "CTRL+SHIFT  V",     desc = "Paste from clipboard" },
-  { keys = "CTRL+SHIFT  F",     desc = "Toggle full-screen" },
-  { keys = "CTRL+SHIFT  L",     desc = "Clear scrollback" },
-  { keys = "CTRL  + / - / 0",   desc = "Font size increase / decrease / reset" },
+  -- Workspaces
+  { keys = "ALT  P",          desc = "Open workspace  (● open · ○ closed)" },
+  { keys = "ALT  ↑ / ↓",      desc = "Cycle workspaces up / down" },
+  { keys = "ALT  0",          desc = "Launcher / help" },
+  { keys = "─────────────────────", desc = "─── Tabs ────────────────────────" },
+  { keys = "ALT  ← / →",      desc = "Prev / next tab" },
+  { keys = "CTRL+SHIFT  T",   desc = "New tab" },
+  { keys = "CTRL+SHIFT  W",   desc = "Close tab" },
+  { keys = "─────────────────────", desc = "─── Panes ───────────────────────" },
+  { keys = "LEADER  |",       desc = "Split pane right" },
+  { keys = "LEADER  -",       desc = "Split pane down" },
+  { keys = "LEADER  h/j/k/l", desc = "Move between panes (vim dirs)" },
+  { keys = "LEADER  z",       desc = "Zoom / unzoom pane" },
+  { keys = "─────────────────────", desc = "─── Utility ─────────────────────" },
+  { keys = "ALT  /",          desc = "Show this legend (you are here)" },
+  { keys = "LEADER  c",       desc = "Copy mode (vi-style scroll + select)" },
+  { keys = "CTRL+SHIFT  C/V", desc = "Copy / paste" },
+  { keys = "CTRL+SHIFT  F",   desc = "Fullscreen" },
+  { keys = "CTRL  + / - / 0", desc = "Font size inc / dec / reset" },
 }
-
-local legend_choices = {}
-for _, entry in ipairs(LEGEND) do
-  table.insert(legend_choices, {
-    id    = "",
-    label = string.format("%-28s  %s", entry.keys, entry.desc),
-  })
-end
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Key table
@@ -466,147 +439,79 @@ end
 
 config.keys = {
 
-  -- ── Legend overlay (ALT+Z then H — no SHIFT needed) ──────────────────────
+  -- ── Legend (ALT+/ — no LEADER, no conflict with LEADER+h pane nav) ───────
   {
-    key = "h", mods = "LEADER",
-    action = act.InputSelector {
-      title   = "Key Bindings — Esc to dismiss",
-      choices = legend_choices,
-      fuzzy   = true,
-      action  = wezterm.action_callback(function(_win, _pane, _id, _label) end),
-    },
+    key = "/", mods = "ALT",
+    action = wezterm.action_callback(function(window, pane)
+      local choices = {}
+      for _, entry in ipairs(LEGEND) do
+        table.insert(choices, {
+          id    = "",
+          label = string.format("%-24s  %s", entry.keys, entry.desc),
+        })
+      end
+      window:perform_action(act.InputSelector {
+        title   = "Key Bindings — Esc to dismiss",
+        choices = choices,
+        fuzzy   = true,
+        action  = wezterm.action_callback(function() end),
+      }, pane)
+    end),
   },
 
-  -- ── Workspace navigation ──────────────────────────────────────────────────
-
-  -- ALT+0 → launcher / help (always available)
-  { key = "0", mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
-
-  -- ALT+P → workspace command palette (PRIMARY way to open a workspace)
-  -- Builds choices dynamically so ● marks already-open workspaces.
+  -- ── Workspaces ────────────────────────────────────────────────────────────
+  -- ALT+P     open workspace picker (● open · ○ closed, fuzzy search)
+  -- ALT+↑/↓   cycle through all workspaces
+  -- ALT+0     launcher / help
+  { key = "0",        mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
+  { key = "UpArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
+  { key = "DownArrow",mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
   {
     key = "p", mods = "ALT",
     action = wezterm.action_callback(function(window, pane)
       local choices = {}
       for _, p in ipairs(PROJECTS) do
-        local open  = workspace_exists(p.id)
+        local open = workspace_exists(p.id)
         table.insert(choices, {
           id    = p.id,
-          label = (open and "● " or "  ") .. p.label,
+          label = (open and "● " or "○ ") .. p.label,
         })
       end
       window:perform_action(act.InputSelector {
-        title   = "Open Workspace  (● already open, fuzzy search by name)",
+        title   = "Workspace  (● open · ○ closed)",
         choices = choices,
         fuzzy   = true,
-        action  = wezterm.action_callback(function(w, p2, id, _label)
+        action  = wezterm.action_callback(function(w, p2, id, _)
           if id and id ~= "" then w:perform_action(open_project(id), p2) end
         end),
       }, pane)
     end),
   },
 
-  -- ALT+Left / ALT+Right → cycle between open workspaces
-  { key = "LeftArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
-  { key = "RightArrow", mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
+  -- ── Tabs ──────────────────────────────────────────────────────────────────
+  -- ALT+←/→  cycle tabs (same modifier, opposite axis to workspace cycling)
+  { key = "LeftArrow",  mods = "ALT", action = act.ActivateTabRelative(-1) },
+  { key = "RightArrow", mods = "ALT", action = act.ActivateTabRelative(1)  },
+  { key = "t", mods = "CTRL|SHIFT",   action = act.SpawnTab "CurrentPaneDomain" },
+  { key = "w", mods = "CTRL|SHIFT",   action = act.CloseCurrentTab { confirm = true } },
 
-  -- LEADER+O → open any repo path as an ad-hoc workspace (no projects.lua entry needed)
-  {
-    key = "o", mods = "LEADER",
-    action = act.PromptInputLine {
-      description = "Workspace path  (e.g. D:/repo/my-project)",
-      action = wezterm.action_callback(function(window, pane, path)
-        if not path or path == "" then return end
-        local base = path:match("([^/\\]+)[/\\]?$") or path
-        local id   = base:lower():gsub("[^a-z0-9]+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
-        if id == "" then id = "adhoc" end
-        if workspace_exists(id) then
-          window:perform_action(act.SwitchToWorkspace { name = id }, pane)
-          return
-        end
-        -- Single-window: switch current window to new workspace, set up panes after
-        window:perform_action(act.SwitchToWorkspace {
-          name  = id,
-          spawn = { cwd = path, args = { BASH, "-l" } },
-        }, pane)
-        wezterm.time.call_after(0.15, function()
-          for _, win in ipairs(mux.all_windows()) do
-            if win:get_workspace() == id then
-              local tabs = win:tabs()
-              if tabs[1] then
-                tabs[1]:set_title("shell")
-                apply_split(tabs[1], "hsplit", "shell", path)
-              end
-              break
-            end
-          end
-        end)
-      end),
-    },
-  },
-
-  -- ── Tab navigation ────────────────────────────────────────────────────────
-  -- ALT+[ / ALT+] — no Windows-system conflicts, left-hand friendly
-  { key = "[", mods = "ALT", action = act.ActivateTabRelative(-1) },
-  { key = "]", mods = "ALT", action = act.ActivateTabRelative(1)  },
-  -- CTRL+ALT+1-4 for direct tab jump
-  { key = "1", mods = "CTRL|ALT",   action = act.ActivateTab(0) },
-  { key = "2", mods = "CTRL|ALT",   action = act.ActivateTab(1) },
-  { key = "3", mods = "CTRL|ALT",   action = act.ActivateTab(2) },
-  { key = "4", mods = "CTRL|ALT",   action = act.ActivateTab(3) },
-  { key = "t", mods = "CTRL|SHIFT", action = act.SpawnTab "CurrentPaneDomain" },
-  { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab { confirm = true } },
-
-  -- ── Pane management ───────────────────────────────────────────────────────
-  { key = "|", mods = "LEADER",     action = act.SplitHorizontal { domain = "CurrentPaneDomain" } },
-  { key = "-", mods = "LEADER",     action = act.SplitVertical   { domain = "CurrentPaneDomain" } },
-  { key = "h", mods = "LEADER",     action = act.ActivatePaneDirection "Left"  },
-  { key = "j", mods = "LEADER",     action = act.ActivatePaneDirection "Down"  },
-  { key = "k", mods = "LEADER",     action = act.ActivatePaneDirection "Up"    },
-  { key = "l", mods = "LEADER",     action = act.ActivatePaneDirection "Right" },
-  { key = "z", mods = "LEADER",     action = act.TogglePaneZoomState },
-
-  -- ── Stock Research macros ─────────────────────────────────────────────────
-  { key = "r", mods = "LEADER",     action = act.SendString "python scripts/generate_live_registry.py --all\n" },
-  { key = "b", mods = "LEADER",     action = act.SendString "python scripts/backtest_broad_sweep.py\n" },
-  { key = "s", mods = "LEADER",     action = act.SendString "python scripts/system_report.py\n" },
-  { key = "p", mods = "LEADER",     action = act.SendString "tail -f live_trading/logs/paper_engine.log\n" },
-
-  -- ── Web project macros ────────────────────────────────────────────────────
-  { key = "d", mods = "LEADER",     action = act.SendString "pnpm dev\n" },
-  { key = "i", mods = "LEADER",     action = act.SendString "pnpm install\n" },
-
-  -- ── New workspace wizard (ALT+Z N) ───────────────────────────────────────
-  {
-    key = "n", mods = "LEADER",
-    action = wezterm.action_callback(function(window, pane)
-      local new_ws_script = CFG_DIR:gsub("\\", "/") .. "/new-workspace.sh"
-      local tab, _ = window:mux_window():spawn_tab({
-        args = { BASH, new_ws_script },
-      })
-      tab:set_title("new-ws")
-    end),
-  },
-
-  -- ── Notifications ─────────────────────────────────────────────────────────
-  {
-    key = "t", mods = "LEADER",
-    action = wezterm.action_callback(function(window, _pane)
-      local ws = window:active_workspace()
-      window:toast_notification("WezTerm", ws .. " — task complete", nil, 5000)
-    end),
-  },
+  -- ── Panes ─────────────────────────────────────────────────────────────────
+  { key = "|", mods = "LEADER", action = act.SplitHorizontal { domain = "CurrentPaneDomain" } },
+  { key = "-", mods = "LEADER", action = act.SplitVertical   { domain = "CurrentPaneDomain" } },
+  { key = "h", mods = "LEADER", action = act.ActivatePaneDirection "Left"  },
+  { key = "j", mods = "LEADER", action = act.ActivatePaneDirection "Down"  },
+  { key = "k", mods = "LEADER", action = act.ActivatePaneDirection "Up"    },
+  { key = "l", mods = "LEADER", action = act.ActivatePaneDirection "Right" },
+  { key = "z", mods = "LEADER", action = act.TogglePaneZoomState },
 
   -- ── Utility ───────────────────────────────────────────────────────────────
-  { key = "c", mods = "LEADER",      action = act.ActivateCopyMode },
-  { key = "f", mods = "LEADER",      action = act.Search { CaseSensitiveString = "" } },
-  { key = "c", mods = "CTRL|SHIFT",  action = act.CopyTo "Clipboard" },
-  { key = "v", mods = "CTRL|SHIFT",  action = act.PasteFrom "Clipboard" },
-  { key = "f", mods = "CTRL|SHIFT",  action = act.ToggleFullScreen },
-  { key = "l", mods = "CTRL|SHIFT",  action = act.ClearScrollback "ScrollbackAndViewport" },
-  { key = "=", mods = "CTRL",        action = act.IncreaseFontSize },
-  { key = "-", mods = "CTRL",        action = act.DecreaseFontSize },
-  { key = "0", mods = "CTRL",        action = act.ResetFontSize },
+  { key = "c", mods = "LEADER",     action = act.ActivateCopyMode },
+  { key = "c", mods = "CTRL|SHIFT", action = act.CopyTo "Clipboard" },
+  { key = "v", mods = "CTRL|SHIFT", action = act.PasteFrom "Clipboard" },
+  { key = "f", mods = "CTRL|SHIFT", action = act.ToggleFullScreen },
+  { key = "=", mods = "CTRL",       action = act.IncreaseFontSize },
+  { key = "-", mods = "CTRL",       action = act.DecreaseFontSize },
+  { key = "0", mods = "CTRL",       action = act.ResetFontSize },
 }
 
 -- ─────────────────────────────────────────────────────────────────────────────
