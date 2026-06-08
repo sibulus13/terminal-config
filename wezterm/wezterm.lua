@@ -251,10 +251,15 @@ local function open_adhoc(window, pane, dir_path)
 end
 
 -- Workspace picker: defined once, shared by both LEGEND and config.keys.
--- Shows: pinned projects | discovered repos from REPO_ROOTS | [+] new workspace prompt.
+-- Order: [+] new (top) | pinned projects | discovered repos from REPO_ROOTS.
 local PICK_WORKSPACE = wezterm.action_callback(function(window, pane)
-  -- Pinned projects section
-  local choices = {}
+  -- [+] New workspace always first so it's reachable without scrolling
+  local choices = {
+    { id = "__new__", label = "[+]  New workspace  (type a path)" },
+    { id = "",        label = "─────────────────────────────────────────" },
+  }
+
+  -- Pinned projects
   local known_cwds = {}
   for _, p in ipairs(PROJECTS) do
     known_cwds[p.cwd] = true
@@ -265,12 +270,16 @@ local PICK_WORKSPACE = wezterm.action_callback(function(window, pane)
     })
   end
 
-  -- Discovered repos: immediate subdirs of REPO_ROOTS not already in PROJECTS
+  -- Discovered repos: immediate subdirs of REPO_ROOTS not already in PROJECTS.
+  -- Glob on Windows doesn't reliably filter dirs-only via trailing slash, so
+  -- skip anything with a file extension (repos don't have them; loose files do).
   local discovered = {}
   for _, root in ipairs(REPO_ROOTS) do
-    for _, d in ipairs(wezterm.glob(root .. "/*/")) do
+    for _, d in ipairs(wezterm.glob(root .. "/*")) do
       local path = d:gsub("[\\/]+$", "")
-      if not known_cwds[path] then
+      local name = path:match("([^/\\]+)$") or ""
+      local has_ext = name:match("%.[^./\\]+$")
+      if not has_ext and not known_cwds[path] then
         known_cwds[path] = true
         table.insert(discovered, path)
       end
@@ -280,17 +289,13 @@ local PICK_WORKSPACE = wezterm.action_callback(function(window, pane)
   if #discovered > 0 then
     table.insert(choices, { id = "", label = "── repos ────────────────────────────────" })
     for _, path in ipairs(discovered) do
-      local name = path:match("([^/]+)$") or path
+      local name = path:match("([^/\\]+)$") or path
       table.insert(choices, {
         id    = "__path__:" .. path,
-        label = "○ " .. name .. "  ‹" .. path .. "›",
+        label = "○ " .. name,
       })
     end
   end
-
-  -- New workspace entry
-  table.insert(choices, { id = "", label = "─────────────────────────────────────────" })
-  table.insert(choices, { id = "__new__", label = "[+]  New workspace  (type a path)" })
 
   window:perform_action(act.InputSelector {
     title   = "Workspace  (● open · ○ closed)",
