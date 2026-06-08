@@ -499,7 +499,36 @@ wezterm.on("update-right-status", function(window, _pane)
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Attention tracking
+-- bell_panes[pane_id] = true when a pane has rung the bell (agent stopped).
+-- Cleared when the user focuses that tab. This is the semantic "done" signal —
+-- distinct from has_unseen_output which fires on every line of continuous output.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+local bell_panes = {}
+
+-- Bell fires when a pane emits \a — wired to Claude Code Stop hook and similar.
+-- Shows a toast identifying the workspace and tab so you know exactly where to look.
+wezterm.on("bell", function(window, pane)
+  bell_panes[pane:pane_id()] = true
+  local tab   = pane:tab()
+  local label = tab and tab:get_title() or "terminal"
+  local ws    = window:active_workspace()
+  window:toast_notification(
+    ws .. "  ·  " .. label,
+    "Agent finished — ready for input",
+    nil,
+    5000
+  )
+end)
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Tab title renderer
+-- Four visual states:
+--   bright  (#c0caf5)  — active, you are here
+--   amber   (#d4943a)  — bell rang here, agent done and waiting (clear on focus)
+--   warm    (#8a7aaa)  — has unseen output, agent still running
+--   muted   (#565f89)  — idle
 -- ─────────────────────────────────────────────────────────────────────────────
 
 wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, _hover, max_width)
@@ -508,16 +537,21 @@ wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, _hover, max_wi
   if #title > max_width - 4 then
     title = wezterm.truncate_right(title, max_width - 4)
   end
-  local idx = tab.tab_index + 1
+  local idx     = tab.tab_index + 1
+  local pane_id = tab.active_pane.pane_id
 
-  -- Active tab: bright. Inactive with unseen output: amber (matches status bar). Idle: muted.
+  -- Clear bell flag when the user arrives at this tab
+  if tab.is_active then bell_panes[pane_id] = nil end
+
   local fg
   if tab.is_active then
     fg = "#c0caf5"
+  elseif bell_panes[pane_id] then
+    fg = "#d4943a"                       -- amber: agent done, needs response
   elseif tab.active_pane.has_unseen_output then
-    fg = "#d4943a"
+    fg = "#8a7aaa"                       -- warm purple: running, producing output
   else
-    fg = "#565f89"
+    fg = "#565f89"                       -- muted: idle
   end
 
   return {
@@ -525,21 +559,6 @@ wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, _hover, max_wi
     { Foreground = { Color = fg } },
     { Text = " " .. idx .. ":" .. title .. " " },
   }
-end)
-
--- Toast notification on terminal bell.
--- Any program can trigger this with: printf '\a'
--- Shell prompt hooks, Claude Code stop hooks, and long-running scripts use this.
-wezterm.on("bell", function(window, pane)
-  local tab   = pane:tab()
-  local label = tab and tab:get_title() or "terminal"
-  local ws    = window:active_workspace()
-  window:toast_notification(
-    "WezTerm  ·  " .. ws,
-    label .. " — needs attention",
-    nil,
-    4000
-  )
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
