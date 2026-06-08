@@ -105,23 +105,73 @@ help tab             startup banner (re-open via ALT+0, tab 1)
 
 ## Key Binding Map
 
-| Key | Action | Notes |
-|-----|--------|-------|
-| `ALT+0` | Launcher workspace | help + shell tabs |
-| `ALT+1–7` | Open project workspace | slot matches projects.lua order |
-| `ALT+←` / `ALT+→` | Cycle workspaces | wraps around |
-| `ALT+P` | Fuzzy project picker | no LEADER required |
-| `ALT+Z → O` | Open repo by path | creates ad-hoc workspace |
-| `ALT+Z → N` | New workspace wizard | appends to projects.lua |
-| `ALT+Z → H` | Full key legend | InputSelector overlay |
-| `ALT+Z → T` | Task-complete toast | shows workspace name |
-| `ALT+[` / `ALT+]` | Prev / next tab | no Windows conflict |
-| `CTRL+ALT+1–4` | Jump to tab | direct by number |
-| `CTRL+SHIFT+T` | New tab | same directory |
-| `CTRL+SHIFT+W` | Close tab | with confirm |
-| `LEADER \|` | Split pane right | vsplit |
-| `LEADER -` | Split pane down | hsplit |
-| `LEADER h/j/k/l` | Move between panes | vim-style |
+### Navigation (two axes, one modifier)
+
+| Key | Action |
+|-----|--------|
+| `ALT+P` | Open workspace — fuzzy picker (● open, ○ closed) |
+| `ALT+↑` / `ALT+↓` | Cycle workspaces up / down |
+| `ALT+0` | Launcher / help workspace |
+| `ALT+←` / `ALT+→` | Prev / next tab within workspace |
+| `CTRL+SHIFT+T` | New tab |
+| `CTRL+SHIFT+W` | Close tab |
+
+### Panes (LEADER = ALT+Z, 1.5s window)
+
+| Key | Action |
+|-----|--------|
+| `LEADER+\|` | Split pane right |
+| `LEADER+-` | Split pane down |
+| `LEADER+h/j/k/l` | Navigate panes (vim-style) |
+| `LEADER+z` | Zoom / unzoom pane |
+
+### Utility
+
+| Key | Action |
+|-----|--------|
+| `ALT+/` | Key legend overlay (fuzzy searchable) |
+| `LEADER+c` | Copy mode (vi-style scroll + select) |
+| `CTRL+SHIFT+C/V` | Copy / paste |
+| `CTRL+SHIFT+F` | Fullscreen |
+| `CTRL+=` / `CTRL+-` / `CTRL+0` | Font size inc / dec / reset |
+
+---
+
+## Keybinding Conflict Reference
+
+### Automatic detection
+The config runs a duplicate-binding scan at load time. Collisions log to:
+**Help → Show Debug Log Overlay** inside WezTerm (or `wezterm.log_warn` output).
+
+### Windows-reserved (cannot bind — WezTerm cannot intercept these)
+
+| Key | Reserved by |
+|-----|------------|
+| `ALT+F4` | Close active window (OS-level) |
+| `ALT+TAB` / `ALT+SHIFT+TAB` | App switcher (OS-level) |
+| `ALT+SPACE` | Window system menu |
+| `ALT+ENTER` | Toggle fullscreen in some Windows contexts |
+| `CTRL+ALT+DEL` | Security screen (OS-level, always intercepted) |
+| `WIN+*` | All Windows key combinations |
+
+### App-level conflicts (WezTerm wins when focused, but other apps grab when unfocused)
+
+| Key | Grabbed by |
+|-----|-----------|
+| `CTRL+SHIFT+T` | New tab in Chrome/Edge/Firefox |
+| `CTRL+SHIFT+W` | Close tab in Chrome/Edge/Firefox |
+| `CTRL+SHIFT+F` | Find in Files in VS Code |
+| `ALT+←` / `ALT+→` | Browser back/forward (only when browser is focused) |
+
+### Known machine-specific conflicts (this machine)
+
+| Key | Conflict |
+|-----|---------|
+| `CTRL+SPACE` | Super Whisper — reason LEADER was moved to `ALT+Z` |
+
+### Safe zone — verified free on Windows 11
+
+`ALT+P`, `ALT+/`, `ALT+0`, `ALT+↑↓←→`, `ALT+Z` (LEADER) — none of these are claimed by Windows globally or by common dev tools.
 | `LEADER z` | Zoom / unzoom pane | |
 | `LEADER r` | Registry regen | stock research macro |
 | `LEADER b` | Backtest sweep | stock research macro |
