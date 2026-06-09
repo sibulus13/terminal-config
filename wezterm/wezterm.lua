@@ -18,12 +18,10 @@ local last_save_time = nil
 local DEFAULT_LAYOUTS = {}
 
 -- Default tab set used for ad-hoc workspaces (repos not in projects.lua).
--- Single-pane tabs: use ALT+SHIFT+←/→ to cycle, LEADER+\ to add a supplementary split.
+-- agent: single-pane for Claude work. run: vsplit for orchestration + shell side-by-side.
 local DEFAULT_TABS = {
-  { title = "agent", layout = "none" },
-  { title = "agent", layout = "none" },
-  { title = "sys",   layout = "none" },
-  { title = "sys",   layout = "none" },
+  { title = "agent", layout = "none"   },
+  { title = "run",   layout = "vsplit" },
 }
 
 -- Root folders scanned for immediate subdirectories in the workspace picker.
@@ -174,9 +172,9 @@ local function apply_split(tab, layout_override, tab_title, cwd)
   end
 
   local direction = layout == "vsplit" and "Right" or "Down"
-  tab:active_pane():split({ direction = direction, cwd = cwd, args = { BASH, "-l" } })
-  -- Return focus to the first (main) pane
-  tab:active_pane():activate()
+  local original  = tab:active_pane()
+  original:split({ direction = direction, cwd = cwd, args = { BASH, "-l" } })
+  original:activate()
 end
 
 local function open_project(proj_id)
@@ -750,6 +748,51 @@ local UNDO_SPLIT = wezterm.action_callback(function(window, _pane)
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Edge-aware pane navigation
+-- Move focus in the given direction. If there is no pane in that direction
+-- (we are at the edge of the tab), cycle to the next or previous tab instead.
+-- Left/Up → previous tab. Right/Down → next tab.
+-- ─────────────────────────────────────────────────────────────────────────────
+local function navigate_or_cycle_tab(direction)
+  return wezterm.action_callback(function(window, pane)
+    local tab       = window:active_tab()
+    local panes_info = tab:panes_with_info()
+    local cur_id    = pane:pane_id()
+
+    local cur_info = nil
+    for _, pi in ipairs(panes_info) do
+      if pi.pane:pane_id() == cur_id then cur_info = pi; break end
+    end
+
+    local has_neighbor = false
+    if cur_info then
+      for _, pi in ipairs(panes_info) do
+        if pi.pane:pane_id() ~= cur_id then
+          if direction == "Left"  and pi.left < cur_info.left  then has_neighbor = true; break end
+          if direction == "Right" and pi.left > cur_info.left  then has_neighbor = true; break end
+          if direction == "Up"    and pi.top  < cur_info.top   then has_neighbor = true; break end
+          if direction == "Down"  and pi.top  > cur_info.top   then has_neighbor = true; break end
+        end
+      end
+    end
+
+    if has_neighbor then
+      window:perform_action(act.ActivatePaneDirection(direction), pane)
+    else
+      local cycle = (direction == "Left" or direction == "Up")
+          and act.ActivateTabRelative(-1)
+          or  act.ActivateTabRelative(1)
+      window:perform_action(cycle, pane)
+    end
+  end)
+end
+
+local NAV_LEFT  = navigate_or_cycle_tab("Left")
+local NAV_RIGHT = navigate_or_cycle_tab("Right")
+local NAV_UP    = navigate_or_cycle_tab("Up")
+local NAV_DOWN  = navigate_or_cycle_tab("Down")
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- LEGEND: single source of truth — each entry carries its WezTermAction.
 -- Modifier tiers:  ALT = workspace  |  ALT+SHIFT = tab  |  LEADER = pane
 -- Same key = same action; only the modifier changes across tiers.
@@ -774,10 +817,10 @@ local LEGEND = {
   { keys = "LEADER  \\",      desc = "Split pane right  (tracked for undo)", action = SPLIT_RIGHT },
   { keys = "LEADER  -",       desc = "Split pane down   (tracked for undo)", action = SPLIT_DOWN  },
   { keys = "LEADER  U",       desc = "Undo last split",                       action = UNDO_SPLIT  },
-  { keys = "ALT  ←",          desc = "Focus pane left",                       action = act.ActivatePaneDirection "Left"  },
-  { keys = "ALT  →",          desc = "Focus pane right",                      action = act.ActivatePaneDirection "Right" },
-  { keys = "ALT  ↑",          desc = "Focus pane up",                         action = act.ActivatePaneDirection "Up"    },
-  { keys = "ALT  ↓",          desc = "Focus pane down",                       action = act.ActivatePaneDirection "Down"  },
+  { keys = "ALT  ←",          desc = "Focus pane left  (or prev tab at edge)",  action = NAV_LEFT  },
+  { keys = "ALT  →",          desc = "Focus pane right (or next tab at edge)",  action = NAV_RIGHT },
+  { keys = "ALT  ↑",          desc = "Focus pane up    (or prev tab at edge)",  action = NAV_UP    },
+  { keys = "ALT  ↓",          desc = "Focus pane down  (or next tab at edge)",  action = NAV_DOWN  },
   { keys = "LEADER  W",       desc = "Close active pane",                     action = act.CloseCurrentPane { confirm = false } },
   { keys = "LEADER  Z",       desc = "Zoom / unzoom pane",                    action = act.TogglePaneZoomState },
   -- ── Utility ────────────────────────────────────────────────────────────────
@@ -830,10 +873,10 @@ config.keys = {
   { key = "n",          mods = "ALT", action = CREATE_WORKSPACE },
   { key = "w",          mods = "ALT", action = CLOSE_WORKSPACE },
   { key = "0",          mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
-  { key = "LeftArrow",  mods = "ALT", action = act.ActivatePaneDirection "Left"  },
-  { key = "RightArrow", mods = "ALT", action = act.ActivatePaneDirection "Right" },
-  { key = "UpArrow",    mods = "ALT", action = act.ActivatePaneDirection "Up"    },
-  { key = "DownArrow",  mods = "ALT", action = act.ActivatePaneDirection "Down"  },
+  { key = "LeftArrow",  mods = "ALT", action = NAV_LEFT  },
+  { key = "RightArrow", mods = "ALT", action = NAV_RIGHT },
+  { key = "UpArrow",    mods = "ALT", action = NAV_UP    },
+  { key = "DownArrow",  mods = "ALT", action = NAV_DOWN  },
 
   -- ── Tabs (ALT+SHIFT) ──────────────────────────────────────────────────────
   { key = "n",          mods = "ALT|SHIFT", action = act.SpawnTab "CurrentPaneDomain" },

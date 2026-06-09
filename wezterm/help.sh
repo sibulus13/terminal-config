@@ -24,7 +24,7 @@ show_help() {
   LEADER + \        split right  (tracked for undo)
   LEADER + -        split down   (tracked for undo)
   LEADER + U        undo last split
-  ALT + ← → ↑ ↓     navigate panes
+  ALT + ← → ↑ ↓     navigate panes  (wraps to next/prev tab at edge)
   LEADER + W        close active pane
   LEADER + Z        zoom / unzoom pane
   LEADER + C        copy mode  (vi scroll + select)
