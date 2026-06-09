@@ -388,28 +388,6 @@ wezterm.on("gui-attached", function(_domain)
   schedule_state_flush()
 end)
 
--- On config reload, restart the help panel in the launcher workspace.
--- Sends Ctrl+C (interrupt the old process) then execs the script fresh.
-wezterm.on("window-config-reloaded", function(_window, _pane)
-  wezterm.time.call_after(0.1, function()
-    for _, win in ipairs(mux.all_windows()) do
-      if win:get_workspace() == "launcher" then
-        local tabs = win:tabs()
-        if #tabs > 0 then
-          local help_pane = tabs[1]:panes()[1]
-          if help_pane then
-            help_pane:send_text("\003")
-            wezterm.time.call_after(0.15, function()
-              help_pane:send_text("exec bash '" .. HELP_SCRIPT .. "'\r")
-            end)
-          end
-        end
-        break
-      end
-    end
-  end)
-end)
-
 -- Also flush on graceful close; window_close_confirmation=NeverPrompt skips the dialog.
 wezterm.on("window-close-requested", function(window, _pane)
   write_session_state(capture_state())
@@ -670,12 +648,42 @@ local SAVE_LAYOUT = wezterm.action_callback(function(window, _pane)
   window:toast_notification("WezTerm", "Layout saved  " .. (last_save_time or ""), nil, 2000)
 end)
 
--- New workspace: prompt for a directory path, then open it as an ad-hoc workspace.
+-- New workspace: two-step wizard — pick a root, then type the project name.
+-- Root choices come from REPO_ROOTS; "[+] Other" accepts a freeform path.
 local CREATE_WORKSPACE = wezterm.action_callback(function(window, pane)
-  window:perform_action(act.PromptInputLine {
-    description = "New workspace — directory path (will be created if missing):",
-    action = wezterm.action_callback(function(w2, p3, line)
-      if line and line ~= "" then open_adhoc(w2, p3, line) end
+  local choices = {}
+  for _, root in ipairs(REPO_ROOTS) do
+    table.insert(choices, { id = root, label = root })
+  end
+  table.insert(choices, { id = "__custom__", label = "[+]  Other  (type a path)" })
+
+  local function prompt_name(w, p, root)
+    w:perform_action(act.PromptInputLine {
+      description = "Project name  (created under " .. root .. "):",
+      action = wezterm.action_callback(function(w2, p2, name)
+        if name and name ~= "" then
+          open_adhoc(w2, p2, root:gsub("[\\/]+$", "") .. "/" .. name)
+        end
+      end),
+    }, p)
+  end
+
+  window:perform_action(act.InputSelector {
+    title   = "New workspace — pick a root",
+    choices = choices,
+    fuzzy   = true,
+    action  = wezterm.action_callback(function(w, p2, id, _)
+      if not id or id == "" then return end
+      if id == "__custom__" then
+        w:perform_action(act.PromptInputLine {
+          description = "Root directory path:",
+          action = wezterm.action_callback(function(w2, p3, root)
+            if root and root ~= "" then prompt_name(w2, p3, root) end
+          end),
+        }, p2)
+      else
+        prompt_name(w, p2, id)
+      end
     end),
   }, pane)
 end)
