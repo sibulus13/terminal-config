@@ -27,10 +27,13 @@ return {
     label = "Stock / Research 2026",
     cwd   = "D:/repo/Stock/Research 2026",
     tabs  = {
-      { title = "agent", cmd = nil,                                         layout = nil,      resume = false },
-      { title = "sys",   cmd = "python scripts/system_report.py; exec bash",layout = "hsplit", resume = false },
-      { title = "test",  cmd = "exec bash",                                 layout = "hsplit", resume = false },
-      { title = "git",   cmd = "git log --oneline -20; exec bash",          layout = "none",   resume = false },
+      -- Two side-by-side agent panes for running parallel Claude agents.
+      { title = "agent",  cmd = nil,                               layout = nil,           resume = false },
+      { title = "agent",  cmd = nil,                               layout = nil,           resume = false },
+      -- Triple layout: left=orchestrator, top-right=backend, bottom-right=frontend.
+      -- Used to verify triple_right split and layout-save/restore behavior.
+      { title = "run",    cmd = nil,                               layout = "triple_right", resume = false },
+      { title = "git",    cmd = "git log --oneline -20; exec bash", layout = "none",        resume = false },
     },
   },
   {
