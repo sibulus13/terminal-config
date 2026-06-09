@@ -133,7 +133,7 @@ wezterm.on("gui-startup", function(_cmd)
     args      = { BASH, HELP_SCRIPT },
   })
   help_tab:set_title("help")
-  help_pane:split({ direction = "Right", args = { BASH, "-lc", "claude --continue" } })
+  help_pane:split({ direction = "Right", args = { BASH, "-l" } })
   help_pane:activate()
 end)
 
