@@ -10,6 +10,7 @@ show_help() {
   cat << 'EOF'
 
   WezTerm  ·  LEADER = ALT+Z (1.5 s)  ·  ALT+/ for full legend
+  Layout: agent (single pane)  ·  shell (vsplit — two plain shells)
 
   WORKSPACES                          TABS
   ─────────────────────────────────   ──────────────────────────────

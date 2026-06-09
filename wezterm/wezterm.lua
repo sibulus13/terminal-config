@@ -18,10 +18,10 @@ local last_save_time = nil
 local DEFAULT_LAYOUTS = {}
 
 -- Default tab set used for ad-hoc workspaces (repos not in projects.lua).
--- agent: single-pane for Claude work. run: vsplit for orchestration + shell side-by-side.
+-- agent: single-pane for Claude work. shell: vsplit, two plain shells for orchestration.
 local DEFAULT_TABS = {
   { title = "agent", layout = "none"   },
-  { title = "run",   layout = "vsplit" },
+  { title = "shell", layout = "vsplit" },
 }
 
 -- Root folders scanned for immediate subdirectories in the workspace picker.

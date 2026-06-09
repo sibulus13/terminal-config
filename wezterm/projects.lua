@@ -3,7 +3,7 @@
 --
 -- Standard 2-tab layout per workspace:
 --   Tab 1 "agent"  — single pane, Claude agent work
---   Tab 2 "run"    — vsplit (left=server/orchestrator, right=shell), optional cmd
+--   Tab 2 "shell"  — vsplit, two plain shells for orchestration / running things
 --
 -- Fields per project:
 --   id      (string)  internal workspace name — no spaces
@@ -25,8 +25,8 @@ return {
     label = "Stock / Research 2026",
     cwd   = "D:/repo/Stock/Research 2026",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = nil,        layout = "vsplit", resume = false },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
   {
@@ -34,8 +34,8 @@ return {
     label = "Cashcow",
     cwd   = "D:/repo/web/cashcow",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = "pnpm dev", layout = "vsplit", resume = true  },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
   {
@@ -43,8 +43,8 @@ return {
     label = "Sunset",
     cwd   = "D:/repo/web/sunset",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = "pnpm dev", layout = "vsplit", resume = true  },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
   {
@@ -52,8 +52,8 @@ return {
     label = "Tarive",
     cwd   = "D:/repo/web/Tarive",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = nil,        layout = "vsplit", resume = false },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
   {
@@ -61,8 +61,8 @@ return {
     label = "Europe 2026 App",
     cwd   = "D:/repo/europe-2026",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = "pnpm dev", layout = "vsplit", resume = true  },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
   {
@@ -70,8 +70,8 @@ return {
     label = "Life",
     cwd   = "D:/repo/Life",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = nil,        layout = "vsplit", resume = false },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
   {
@@ -79,8 +79,8 @@ return {
     label = "SI8 Landing",
     cwd   = "D:/repo/web/si8-tech-landing-page",
     tabs  = {
-      { title = "agent", cmd = nil,        layout = "none",   resume = false },
-      { title = "run",   cmd = nil,        layout = "vsplit", resume = false },
+      { title = "agent", cmd = nil, layout = "none",   resume = false },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
 }
