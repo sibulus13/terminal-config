@@ -15,7 +15,7 @@ show_help() {
   ─────────────────────────────────   ──────────────────────────────
   ALT + P      open / switch          ALT+SHIFT + ← / →  prev / next
   ALT + N      new  (prompt path)     ALT+SHIFT + N       new tab
-  ALT + ← / →  cycle workspaces       ALT+SHIFT + W       close tab
+  LEADER + ← / →  cycle workspaces    ALT+SHIFT + W       close tab
   ALT + W      close workspace
   ALT + 0      launcher / help
 
@@ -24,7 +24,7 @@ show_help() {
   LEADER + \        split right  (tracked for undo)
   LEADER + -        split down   (tracked for undo)
   LEADER + U        undo last split
-  LEADER + ← → ↑ ↓  navigate panes
+  ALT + ← → ↑ ↓     navigate panes
   LEADER + W        close active pane
   LEADER + Z        zoom / unzoom pane
   LEADER + C        copy mode  (vi scroll + select)

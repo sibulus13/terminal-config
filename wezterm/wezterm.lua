@@ -14,22 +14,16 @@ local BASH = "C:/Program Files/Git/bin/bash.exe"
 local last_save_time = nil
 
 -- Default split layout applied when a tab's layout field is nil.
--- Override per-tab in projects.lua with layout = "vsplit"|"hsplit"|"none".
-local DEFAULT_LAYOUTS = {
-  agent = "vsplit",   -- two side-by-side panes
-  dev   = "hsplit",   -- primary top, secondary bottom
-  cmd   = "hsplit",
-  test  = "hsplit",
-  sys   = "hsplit",
-}
+-- Intentionally empty: tabs start as single panes; split manually with LEADER+\ or LEADER+-.
+local DEFAULT_LAYOUTS = {}
 
 -- Default tab set used for ad-hoc workspaces (repos not in projects.lua).
--- Two agent tabs (side-by-side) + two system tabs (top/bottom).
+-- Single-pane tabs: use ALT+SHIFT+←/→ to cycle, LEADER+\ to add a supplementary split.
 local DEFAULT_TABS = {
-  { title = "agent", layout = "vsplit" },
-  { title = "agent", layout = "vsplit" },
-  { title = "sys",   layout = "hsplit" },
-  { title = "sys",   layout = "hsplit" },
+  { title = "agent", layout = "none" },
+  { title = "agent", layout = "none" },
+  { title = "sys",   layout = "none" },
+  { title = "sys",   layout = "none" },
 }
 
 -- Root folders scanned for immediate subdirectories in the workspace picker.
