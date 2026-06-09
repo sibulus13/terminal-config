@@ -20,8 +20,8 @@ local DEFAULT_LAYOUTS = {}
 -- Default tab set used for ad-hoc workspaces (repos not in projects.lua).
 -- agent: single-pane for Claude work. shell: vsplit, two plain shells for orchestration.
 local DEFAULT_TABS = {
-  { title = "agent", layout = "none"   },
-  { title = "shell", layout = "vsplit" },
+  { title = "agent", cmd = "claude --continue", layout = "none"   },
+  { title = "shell", cmd = nil,                 layout = "vsplit" },
 }
 
 -- Root folders scanned for immediate subdirectories in the workspace picker.
@@ -133,7 +133,7 @@ wezterm.on("gui-startup", function(_cmd)
     args      = { BASH, HELP_SCRIPT },
   })
   help_tab:set_title("help")
-  help_pane:split({ direction = "Right", args = { BASH, "-l" } })
+  help_pane:split({ direction = "Right", args = { BASH, "-lc", "claude --continue" } })
   help_pane:activate()
 end)
 
@@ -263,9 +263,11 @@ local function open_adhoc(window, pane, dir_path)
     return
   end
 
+  local dt1 = DEFAULT_TABS[1]
+  local t1_args = dt1.cmd and { BASH, "-lc", dt1.cmd } or { BASH, "-l" }
   window:perform_action(act.SwitchToWorkspace {
     name  = ws_id,
-    spawn = { cwd = dir_path, args = { BASH, "-l" } },
+    spawn = { cwd = dir_path, args = t1_args },
   }, pane)
 
   -- After the workspace switch lands, rename the first tab and spawn the rest.
@@ -279,12 +281,13 @@ local function open_adhoc(window, pane, dir_path)
     local tabs = target_win:tabs()
     if #tabs == 0 then return end
 
-    tabs[1]:set_title(DEFAULT_TABS[1].title)
-    apply_split(tabs[1], DEFAULT_TABS[1].layout, DEFAULT_TABS[1].title, dir_path)
+    tabs[1]:set_title(dt1.title)
+    apply_split(tabs[1], dt1.layout, dt1.title, dir_path)
 
     for j = 2, #DEFAULT_TABS do
-      local t = DEFAULT_TABS[j]
-      local new_tab = target_win:spawn_tab({ cwd = dir_path, args = { BASH, "-l" } })
+      local t    = DEFAULT_TABS[j]
+      local args = t.cmd and { BASH, "-lc", t.cmd } or { BASH, "-l" }
+      local new_tab = target_win:spawn_tab({ cwd = dir_path, args = args })
       new_tab:set_title(t.title)
       apply_split(new_tab, t.layout, t.title, dir_path)
     end
