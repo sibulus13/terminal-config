@@ -826,10 +826,12 @@ config.keys = {
   -- ── Workspaces (ALT) ──────────────────────────────────────────────────────
   { key = "p",          mods = "ALT", action = PICK_WORKSPACE },
   { key = "n",          mods = "ALT", action = CREATE_WORKSPACE },
-  { key = "LeftArrow",  mods = "ALT", action = act.SwitchWorkspaceRelative(-1) },
-  { key = "RightArrow", mods = "ALT", action = act.SwitchWorkspaceRelative(1)  },
   { key = "w",          mods = "ALT", action = CLOSE_WORKSPACE },
   { key = "0",          mods = "ALT", action = act.SwitchToWorkspace { name = "launcher" } },
+  { key = "LeftArrow",  mods = "ALT", action = act.ActivatePaneDirection "Left"  },
+  { key = "RightArrow", mods = "ALT", action = act.ActivatePaneDirection "Right" },
+  { key = "UpArrow",    mods = "ALT", action = act.ActivatePaneDirection "Up"    },
+  { key = "DownArrow",  mods = "ALT", action = act.ActivatePaneDirection "Down"  },
 
   -- ── Tabs (ALT+SHIFT) ──────────────────────────────────────────────────────
   { key = "n",          mods = "ALT|SHIFT", action = act.SpawnTab "CurrentPaneDomain" },
@@ -841,10 +843,8 @@ config.keys = {
   { key = "\\",        mods = "LEADER", action = SPLIT_RIGHT },
   { key = "-",         mods = "LEADER", action = SPLIT_DOWN  },
   { key = "u",         mods = "LEADER", action = UNDO_SPLIT  },
-  { key = "LeftArrow", mods = "LEADER", action = act.ActivatePaneDirection "Left"  },
-  { key = "RightArrow",mods = "LEADER", action = act.ActivatePaneDirection "Right" },
-  { key = "UpArrow",   mods = "LEADER", action = act.ActivatePaneDirection "Up"    },
-  { key = "DownArrow", mods = "LEADER", action = act.ActivatePaneDirection "Down"  },
+  { key = "LeftArrow", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
+  { key = "RightArrow",mods = "LEADER", action = act.SwitchWorkspaceRelative(1)  },
   { key = "w",         mods = "LEADER", action = act.CloseCurrentPane { confirm = false } },
   { key = "z",         mods = "LEADER", action = act.TogglePaneZoomState },
 
