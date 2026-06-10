@@ -752,41 +752,54 @@ end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Edge-aware pane navigation
--- Move focus in the given direction. If there is no pane in that direction
--- (we are at the edge of the tab), cycle to the next or previous tab instead.
--- Left/Up → previous tab. Right/Down → next tab.
+-- Attempt ActivatePaneDirection; if the active pane is unchanged after 50ms we
+-- are at the edge of the tab and cycle to the adjacent tab instead.
+-- When cycling, land on the correct edge pane of the target tab:
+--   going Right/Down → leftmost/topmost pane of the next tab
+--   going Left/Up    → rightmost/bottommost pane of the prev tab
 -- ─────────────────────────────────────────────────────────────────────────────
+
+local function activate_edge_pane(tab, direction)
+  local panes_info = tab:panes_with_info()
+  if #panes_info == 0 then return end
+  local want_first = (direction == "Right" or direction == "Down")
+  local use_top    = (direction == "Up"    or direction == "Down")
+  local target     = panes_info[1]
+  for _, pi in ipairs(panes_info) do
+    local a = use_top and pi.top  or pi.left
+    local b = use_top and target.top or target.left
+    if want_first and a < b then target = pi
+    elseif not want_first and a > b then target = pi
+    end
+  end
+  target.pane:activate()
+end
+
 local function navigate_or_cycle_tab(direction)
   return wezterm.action_callback(function(window, pane)
-    local tab       = window:active_tab()
-    local panes_info = tab:panes_with_info()
-    local cur_id    = pane:pane_id()
+    local before_id = pane:pane_id()
+    window:perform_action(act.ActivatePaneDirection(direction), pane)
+    wezterm.time.call_after(0.05, function()
+      local cur_pane = window:active_tab():active_pane()
+      if cur_pane:pane_id() ~= before_id then return end  -- pane changed, done
 
-    local cur_info = nil
-    for _, pi in ipairs(panes_info) do
-      if pi.pane:pane_id() == cur_id then cur_info = pi; break end
-    end
-
-    local has_neighbor = false
-    if cur_info then
-      for _, pi in ipairs(panes_info) do
-        if pi.pane:pane_id() ~= cur_id then
-          if direction == "Left"  and pi.left < cur_info.left  then has_neighbor = true; break end
-          if direction == "Right" and pi.left > cur_info.left  then has_neighbor = true; break end
-          if direction == "Up"    and pi.top  < cur_info.top   then has_neighbor = true; break end
-          if direction == "Down"  and pi.top  > cur_info.top   then has_neighbor = true; break end
-        end
+      -- Pane unchanged: at the edge — cycle to the adjacent tab (circular).
+      local go_forward = (direction == "Right" or direction == "Down")
+      local tabs        = window:mux_window():tabs()
+      local cur_tab_id  = window:active_tab():tab_id()
+      local cur_idx     = 1
+      for i, t in ipairs(tabs) do
+        if t:tab_id() == cur_tab_id then cur_idx = i; break end
       end
-    end
-
-    if has_neighbor then
-      window:perform_action(act.ActivatePaneDirection(direction), pane)
-    else
-      local cycle = (direction == "Left" or direction == "Up")
-          and act.ActivateTabRelative(1)
-          or  act.ActivateTabRelative(-1)
-      window:perform_action(cycle, pane)
-    end
+      local target_idx = go_forward
+          and (cur_idx % #tabs) + 1
+          or  ((cur_idx - 2 + #tabs) % #tabs) + 1
+      window:perform_action(act.ActivateTab(target_idx - 1), cur_pane)
+      -- Land on the correct edge pane of the new tab.
+      wezterm.time.call_after(0.1, function()
+        activate_edge_pane(window:active_tab(), direction)
+      end)
+    end)
   end)
 end
 
