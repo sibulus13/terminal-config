@@ -779,9 +779,8 @@ local function navigate_or_cycle_tab(direction)
       end
     end
 
-    local flip = { Left = "Right", Right = "Left", Up = "Down", Down = "Up" }
     if has_neighbor then
-      window:perform_action(act.ActivatePaneDirection(flip[direction]), pane)
+      window:perform_action(act.ActivatePaneDirection(direction), pane)
     else
       local cycle = (direction == "Left" or direction == "Up")
           and act.ActivateTabRelative(1)
