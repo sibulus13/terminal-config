@@ -529,8 +529,6 @@ wezterm.on("update-right-status", function(window, _pane)
       table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })   -- muted rose: open
     end
     table.insert(left_parts, { Text = label })
-    table.insert(left_parts, { Foreground = { Color = "#2a1a3a" } })
-    table.insert(left_parts, { Text = "│" })
   end
 
   -- Nothing open yet: nudge user toward the picker
