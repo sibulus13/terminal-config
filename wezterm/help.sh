@@ -12,21 +12,20 @@ show_help() {
   WezTerm  ·  LEADER = ALT+Z (1.5 s)  ·  ALT+/ for full legend
   Layout: agent (single pane)  ·  shell (vsplit — two plain shells)
 
-  WORKSPACES                          TABS
-  ─────────────────────────────────   ──────────────────────────────
-  ALT + P      open / switch          ALT+SHIFT + ← / →  prev / next
-  ALT + N      new  (prompt path)     ALT+SHIFT + N       new tab
-  LEADER + ← / →  cycle workspaces    ALT+SHIFT + W       close tab
-  ALT + W      close workspace
-  ALT + 0      launcher / help
+  WORKSPACES                            TABS  (LEADER — least frequent)
+  ───────────────────────────────────   ──────────────────────────────
+  ALT + P          open / switch        LEADER + ← / →   prev / next
+  ALT + N          new  (prompt path)   LEADER + N        new tab
+  ALT + W          close workspace      LEADER + W        close tab
+  ALT + 0          launcher / help
+  ALT+SHIFT + ← →  cycle workspaces
 
-  PANES
+  PANES  (ALT arrows — most frequent; wraps to adjacent tab at edge)
   ──────────────────────────────────────────────────────────────────
+  ALT + ← → ↑ ↓    navigate panes  (wraps to next/prev tab at edge)
   LEADER + \        split right  (tracked for undo)
   LEADER + -        split down   (tracked for undo)
   LEADER + U        undo last split
-  ALT + ← → ↑ ↓     navigate panes  (wraps to next/prev tab at edge)
-  LEADER + W        close active pane
   LEADER + Z        zoom / unzoom pane
   LEADER + C        copy mode  (vi scroll + select)
   LEADER + S        save layout  (◆ updates status bar)

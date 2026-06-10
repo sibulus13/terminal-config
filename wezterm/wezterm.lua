@@ -798,35 +798,34 @@ local NAV_DOWN  = navigate_or_cycle_tab("Down")
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- LEGEND: single source of truth — each entry carries its WezTermAction.
--- Modifier tiers:  ALT = workspace  |  ALT+SHIFT = tab  |  LEADER = pane
--- Same key = same action; only the modifier changes across tiers.
+-- Modifier tiers:  ALT = pane nav  |  ALT+SHIFT = workspace cycle  |  LEADER = tabs + pane ops
+-- Panes are most frequent; edge-wrap from panes reaches tabs naturally.
 -- Selecting an entry in the ALT+/ overlay executes it; separators (action=nil) are no-ops.
 -- ─────────────────────────────────────────────────────────────────────────────
 local LEGEND = {
-  -- ── Workspaces (ALT) ───────────────────────────────────────────────────────
+  -- ── Workspaces (ALT / ALT+SHIFT) ──────────────────────────────────────────
   { keys = "ALT  P",          desc = "Open workspace  (● open · ○ closed)",  action = PICK_WORKSPACE },
   { keys = "ALT  N",          desc = "New workspace  (prompt for path)",      action = CREATE_WORKSPACE },
   { keys = "ALT  W",          desc = "Close workspace",                       action = CLOSE_WORKSPACE },
   { keys = "ALT  0",          desc = "Launcher / help",                       action = act.SwitchToWorkspace { name = "launcher" } },
-  { keys = "LEADER  ←",       desc = "Previous workspace",                    action = act.SwitchWorkspaceRelative(-1) },
-  { keys = "LEADER  →",       desc = "Next workspace",                        action = act.SwitchWorkspaceRelative(1)  },
-  -- ── Tabs (ALT+SHIFT) ───────────────────────────────────────────────────────
+  { keys = "ALT+SHIFT  ←",    desc = "Previous workspace",                    action = act.SwitchWorkspaceRelative(-1) },
+  { keys = "ALT+SHIFT  →",    desc = "Next workspace",                        action = act.SwitchWorkspaceRelative(1)  },
+  -- ── Tabs (LEADER) ──────────────────────────────────────────────────────────
   { keys = "─────────────────────", desc = "─── Tabs ────────────────────────",  action = nil },
-  { keys = "ALT+SHIFT  N",    desc = "New tab",                               action = act.SpawnTab "CurrentPaneDomain" },
-  { keys = "ALT+SHIFT  ←",    desc = "Previous tab",                          action = act.ActivateTabRelative(-1) },
-  { keys = "ALT+SHIFT  →",    desc = "Next tab",                              action = act.ActivateTabRelative(1)  },
-  { keys = "ALT+SHIFT  W",    desc = "Close tab",                             action = act.CloseCurrentTab { confirm = true } },
-  -- ── Panes (LEADER) ─────────────────────────────────────────────────────────
+  { keys = "LEADER  N",       desc = "New tab",                               action = act.SpawnTab "CurrentPaneDomain" },
+  { keys = "LEADER  ←",       desc = "Previous tab",                          action = act.ActivateTabRelative(-1) },
+  { keys = "LEADER  →",       desc = "Next tab",                              action = act.ActivateTabRelative(1)  },
+  { keys = "LEADER  W",       desc = "Close tab",                             action = act.CloseCurrentTab { confirm = true } },
+  -- ── Panes (ALT arrows + LEADER splits) ─────────────────────────────────────
   { keys = "─────────────────────", desc = "─── Panes ───────────────────────",  action = nil },
-  { keys = "LEADER  \\",      desc = "Split pane right  (tracked for undo)", action = SPLIT_RIGHT },
-  { keys = "LEADER  -",       desc = "Split pane down   (tracked for undo)", action = SPLIT_DOWN  },
-  { keys = "LEADER  U",       desc = "Undo last split",                       action = UNDO_SPLIT  },
   { keys = "ALT  ←",          desc = "Focus pane left  (or prev tab at edge)",  action = NAV_LEFT  },
   { keys = "ALT  →",          desc = "Focus pane right (or next tab at edge)",  action = NAV_RIGHT },
   { keys = "ALT  ↑",          desc = "Focus pane up    (or prev tab at edge)",  action = NAV_UP    },
   { keys = "ALT  ↓",          desc = "Focus pane down  (or next tab at edge)",  action = NAV_DOWN  },
-  { keys = "LEADER  W",       desc = "Close active pane",                     action = act.CloseCurrentPane { confirm = false } },
-  { keys = "LEADER  Z",       desc = "Zoom / unzoom pane",                    action = act.TogglePaneZoomState },
+  { keys = "LEADER  \\",      desc = "Split pane right  (tracked for undo)",    action = SPLIT_RIGHT },
+  { keys = "LEADER  -",       desc = "Split pane down   (tracked for undo)",    action = SPLIT_DOWN  },
+  { keys = "LEADER  U",       desc = "Undo last split",                         action = UNDO_SPLIT  },
+  { keys = "LEADER  Z",       desc = "Zoom / unzoom pane",                      action = act.TogglePaneZoomState },
   -- ── Utility ────────────────────────────────────────────────────────────────
   { keys = "─────────────────────", desc = "─── Utility ─────────────────────",  action = nil },
   { keys = "ALT  /",          desc = "Show this legend",                      action = nil },
@@ -882,19 +881,20 @@ config.keys = {
   { key = "UpArrow",    mods = "ALT", action = NAV_UP    },
   { key = "DownArrow",  mods = "ALT", action = NAV_DOWN  },
 
-  -- ── Tabs (ALT+SHIFT) ──────────────────────────────────────────────────────
-  { key = "n",          mods = "ALT|SHIFT", action = act.SpawnTab "CurrentPaneDomain" },
-  { key = "LeftArrow",  mods = "ALT|SHIFT", action = act.ActivateTabRelative(-1) },
-  { key = "RightArrow", mods = "ALT|SHIFT", action = act.ActivateTabRelative(1)  },
-  { key = "w",          mods = "ALT|SHIFT", action = act.CloseCurrentTab { confirm = true } },
+  -- ── Workspace cycle (ALT+SHIFT) ───────────────────────────────────────────
+  { key = "LeftArrow",  mods = "ALT|SHIFT", action = act.SwitchWorkspaceRelative(-1) },
+  { key = "RightArrow", mods = "ALT|SHIFT", action = act.SwitchWorkspaceRelative(1)  },
 
-  -- ── Panes (LEADER) ────────────────────────────────────────────────────────
+  -- ── Tabs (LEADER) ─────────────────────────────────────────────────────────
+  { key = "n",          mods = "LEADER", action = act.SpawnTab "CurrentPaneDomain" },
+  { key = "LeftArrow",  mods = "LEADER", action = act.ActivateTabRelative(-1) },
+  { key = "RightArrow", mods = "LEADER", action = act.ActivateTabRelative(1)  },
+  { key = "w",          mods = "LEADER", action = act.CloseCurrentTab { confirm = true } },
+
+  -- ── Pane splits / ops (LEADER) ────────────────────────────────────────────
   { key = "\\",        mods = "LEADER", action = SPLIT_RIGHT },
   { key = "-",         mods = "LEADER", action = SPLIT_DOWN  },
   { key = "u",         mods = "LEADER", action = UNDO_SPLIT  },
-  { key = "LeftArrow", mods = "LEADER", action = act.SwitchWorkspaceRelative(-1) },
-  { key = "RightArrow",mods = "LEADER", action = act.SwitchWorkspaceRelative(1)  },
-  { key = "w",         mods = "LEADER", action = act.CloseCurrentPane { confirm = false } },
   { key = "z",         mods = "LEADER", action = act.TogglePaneZoomState },
 
   -- ── Utility ───────────────────────────────────────────────────────────────
