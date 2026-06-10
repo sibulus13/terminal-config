@@ -516,7 +516,7 @@ wezterm.on("update-right-status", function(window, _pane)
       if attention then break end
     end
 
-    local label = string.format(" %s%s ", attention and "● " or "", entry.label)
+    local label = string.format("  %s%s  ", attention and "● " or "", entry.label)
 
     if is_active then
       table.insert(left_parts, { Attribute = { Intensity = "Bold" } })
@@ -529,6 +529,8 @@ wezterm.on("update-right-status", function(window, _pane)
       table.insert(left_parts, { Foreground = { Color = "#9b6aaa" } })   -- muted rose: open
     end
     table.insert(left_parts, { Text = label })
+    table.insert(left_parts, { Foreground = { Color = "#2a1a3a" } })
+    table.insert(left_parts, { Text = "│" })
   end
 
   -- Nothing open yet: nudge user toward the picker
@@ -619,7 +621,7 @@ wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, _hover, max_wi
   return {
     { Background = { Color = tab.is_active and "#1a1b26" or "#16161e" } },
     { Foreground = { Color = fg } },
-    { Text = " " .. idx .. ":" .. title .. " " },
+    { Text = "  " .. idx .. ":" .. title .. "  " },
   }
 end)
 
