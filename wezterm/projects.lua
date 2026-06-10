@@ -25,7 +25,7 @@ return {
     label = "WezTerm Config",
     cwd   = "C:/Users/Michael/.config/wezterm",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -34,7 +34,7 @@ return {
     label = "Stock / Research 2026",
     cwd   = "D:/repo/Stock/Research 2026",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -43,7 +43,7 @@ return {
     label = "Cashcow",
     cwd   = "D:/repo/web/cashcow",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -52,7 +52,7 @@ return {
     label = "Sunset",
     cwd   = "D:/repo/web/sunset",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -61,7 +61,7 @@ return {
     label = "Tarive",
     cwd   = "D:/repo/web/Tarive",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -70,7 +70,7 @@ return {
     label = "Europe 2026 App",
     cwd   = "D:/repo/europe-2026",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -79,7 +79,7 @@ return {
     label = "Life",
     cwd   = "D:/repo/Life",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
@@ -88,7 +88,7 @@ return {
     label = "SI8 Landing",
     cwd   = "D:/repo/web/si8-tech-landing-page",
     tabs  = {
-      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },

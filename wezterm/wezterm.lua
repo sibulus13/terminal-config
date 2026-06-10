@@ -20,7 +20,7 @@ local DEFAULT_LAYOUTS = {}
 -- Default tab set used for ad-hoc workspaces (repos not in projects.lua).
 -- agent: single-pane for Claude work. shell: vsplit, two plain shells for orchestration.
 local DEFAULT_TABS = {
-  { title = "agent", cmd = "claude --continue", layout = "none"   },
+  { title = "agent", cmd = "claude --continue; exec bash", layout = "none"   },
   { title = "shell", cmd = nil,                 layout = "vsplit" },
 }
 
@@ -782,10 +782,18 @@ local function navigate_or_cycle_tab(direction)
     if has_neighbor then
       window:perform_action(act.ActivatePaneDirection(direction), pane)
     else
-      local cycle = (direction == "Left" or direction == "Up")
-          and act.ActivateTabRelative(-1)
-          or  act.ActivateTabRelative(1)
-      window:perform_action(cycle, pane)
+      -- Move to the adjacent tab in that direction; stop at the ends (no wraparound).
+      local tabs      = window:mux_window():tabs()
+      local cur_tab_id = window:active_tab():tab_id()
+      local cur_idx   = 1
+      for i, t in ipairs(tabs) do
+        if t:tab_id() == cur_tab_id then cur_idx = i; break end
+      end
+      local go_prev    = (direction == "Left" or direction == "Up")
+      local target_idx = go_prev and (cur_idx - 1) or (cur_idx + 1)
+      if target_idx >= 1 and target_idx <= #tabs then
+        window:perform_action(act.ActivateTab(target_idx - 1), pane)
+      end
     end
   end)
 end
