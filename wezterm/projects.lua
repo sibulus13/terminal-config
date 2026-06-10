@@ -21,6 +21,15 @@
 
 return {
   {
+    id    = "wezterm",
+    label = "WezTerm Config",
+    cwd   = "C:/Users/Michael/.config/wezterm",
+    tabs  = {
+      { title = "agent", cmd = "claude --continue", layout = "none", resume = true },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
+    },
+  },
+  {
     id    = "stock-research",
     label = "Stock / Research 2026",
     cwd   = "D:/repo/Stock/Research 2026",
