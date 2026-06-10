@@ -812,8 +812,6 @@ local LEGEND = {
   -- ── Tabs (LEADER) ──────────────────────────────────────────────────────────
   { keys = "─────────────────────", desc = "─── Tabs ────────────────────────",  action = nil },
   { keys = "LEADER  N",       desc = "New tab",                               action = act.SpawnTab "CurrentPaneDomain" },
-  { keys = "LEADER  ←",       desc = "Previous tab",                          action = act.ActivateTabRelative(-1) },
-  { keys = "LEADER  →",       desc = "Next tab",                              action = act.ActivateTabRelative(1)  },
   { keys = "LEADER  W",       desc = "Close tab",                             action = act.CloseCurrentTab { confirm = true } },
   -- ── Panes (ALT arrows + LEADER splits) ─────────────────────────────────────
   { keys = "─────────────────────", desc = "─── Panes ───────────────────────",  action = nil },
@@ -886,8 +884,6 @@ config.keys = {
 
   -- ── Tabs (LEADER) ─────────────────────────────────────────────────────────
   { key = "n",          mods = "LEADER", action = act.SpawnTab "CurrentPaneDomain" },
-  { key = "LeftArrow",  mods = "LEADER", action = act.ActivateTabRelative(-1) },
-  { key = "RightArrow", mods = "LEADER", action = act.ActivateTabRelative(1)  },
   { key = "w",          mods = "LEADER", action = act.CloseCurrentTab { confirm = true } },
 
   -- ── Pane splits / ops (LEADER) ────────────────────────────────────────────

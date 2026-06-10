@@ -12,13 +12,13 @@ show_help() {
   WezTerm  ·  LEADER = ALT+Z (1.5 s)  ·  ALT+/ for full legend
   Layout: agent (single pane)  ·  shell (vsplit — two plain shells)
 
-  WORKSPACES                            TABS  (LEADER — least frequent)
-  ───────────────────────────────────   ──────────────────────────────
-  ALT + P          open / switch        LEADER + ← / →   prev / next
-  ALT + N          new  (prompt path)   LEADER + N        new tab
-  ALT + W          close workspace      LEADER + W        close tab
-  ALT + 0          launcher / help
-  ALT+SHIFT + ← →  cycle workspaces
+  WORKSPACES                            TABS  (LEADER)
+  ───────────────────────────────────   ──────────────────────────
+  ALT + P          open / switch        LEADER + N   new tab
+  ALT + N          new  (prompt path)   LEADER + W   close tab
+  ALT + W          close workspace
+  ALT + 0          launcher / help      (cycle tabs via ALT pane
+  ALT+SHIFT + ← →  cycle workspaces      nav — edge wraps to tab)
 
   PANES  (ALT arrows — most frequent; wraps to adjacent tab at edge)
   ──────────────────────────────────────────────────────────────────
