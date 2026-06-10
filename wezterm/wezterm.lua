@@ -779,21 +779,14 @@ local function navigate_or_cycle_tab(direction)
       end
     end
 
+    local flip = { Left = "Right", Right = "Left", Up = "Down", Down = "Up" }
     if has_neighbor then
-      window:perform_action(act.ActivatePaneDirection(direction), pane)
+      window:perform_action(act.ActivatePaneDirection(flip[direction]), pane)
     else
-      -- Move to the adjacent tab in that direction; stop at the ends (no wraparound).
-      local tabs      = window:mux_window():tabs()
-      local cur_tab_id = window:active_tab():tab_id()
-      local cur_idx   = 1
-      for i, t in ipairs(tabs) do
-        if t:tab_id() == cur_tab_id then cur_idx = i; break end
-      end
-      local go_prev    = (direction == "Left" or direction == "Up")
-      local target_idx = go_prev and (cur_idx - 1) or (cur_idx + 1)
-      if target_idx >= 1 and target_idx <= #tabs then
-        window:perform_action(act.ActivateTab(target_idx - 1), pane)
-      end
+      local cycle = (direction == "Left" or direction == "Up")
+          and act.ActivateTabRelative(1)
+          or  act.ActivateTabRelative(-1)
+      window:perform_action(cycle, pane)
     end
   end)
 end
