@@ -1,7 +1,7 @@
 # Terminal Config — Session Handoff
 
 > Claude reads this at session start. Update before committing.
-> Last updated: 2026-06-08
+> Last updated: 2026-06-11
 
 ---
 
@@ -24,17 +24,19 @@ Zellij config is written and committed — blocked on WSL2 install.
 - Crimson Noir theme — bg `#0e0014`, accent `#c4185c`
 - Dotfiles versioned at `github.com/sibulus13/terminal-config`
 
-**Blocked**
+**Done (2026-06-11)**
 
-- Zellij persistent context panel — config ready in `zellij/`
-  - needs: `wsl --install` (admin PowerShell) → restart → `bash /mnt/c/Users/Michael/dotfiles/zellij/install-wsl.sh`
+- Zellij 0.44.3 installed in WSL2 (Ubuntu 24.04, `~/.local/bin/zellij`)
+- Config symlinked: `~/.config/zellij` → `/mnt/c/Users/Michael/dotfiles/zellij`
+- Layouts: `workspace.kdl` (default), `agent.kdl`
+- PATH added to `~/.bashrc`
 
 ---
 
 ## What's next
 
-1. WSL2 + Zellij — run `wsl --install`, restart, then install-wsl.sh
-2. Per-project context files — after Zellij: `init-context.sh` in each project root
+1. Per-project context files — run `bash /mnt/c/Users/Michael/dotfiles/zellij/init-context.sh` in each project root inside WSL2
+2. First launch — open WezTerm, `wsl -d Ubuntu-24.04`, then `zellij` or `zellij --layout agent`
 3. Crimson Noir `.toml` — extract theme out of wezterm.lua, WCAG audit
 4. `LEADER+W` — close current pane (agreed, not yet implemented)
 5. Per-workspace LEADER macros — e.g. `LEADER+D` runs `pnpm dev` in the right project

@@ -135,6 +135,6 @@ ALT+/  to see all keys
 **Planned**
 - [ ] `LEADER+W` — close current pane
 - [ ] Crimson Noir `.toml` + WCAG contrast audit
-- [ ] WSL2 + Zellij — persistent per-project context sidebar
+- [x] WSL2 + Zellij — persistent per-project context sidebar (Ubuntu 24.04, Zellij 0.44.3)
 - [ ] Per-workspace LEADER macros (e.g. `LEADER+D` runs the right dev command)
 - [ ] Cross-device install verification
