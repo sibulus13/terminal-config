@@ -1,0 +1,21 @@
+// project.kdl — default 2-tab layout for every project session
+//
+// Tab 1 "agent"  — single pane, runs claude --continue (falls back to bash)
+// Tab 2 "shell"  — vertical split, two plain shells for orchestration
+//
+// Launch via: zj <project-name>
+// The cwd is set by the zj script at session-creation time.
+
+layout {
+    tab name="agent" focus=true {
+        pane command="bash" {
+            args "-lc" "claude --continue; exec bash"
+        }
+    }
+    tab name="shell" {
+        pane split_direction="vertical" {
+            pane
+            pane
+        }
+    }
+}

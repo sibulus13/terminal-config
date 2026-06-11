@@ -1,0 +1,126 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Zellij config — ported from WezTerm (Crimson Noir)
+//
+// Keybinding tiers (mirrors WezTerm setup):
+//   ALT + arrows        pane navigation  (wraps to adjacent tab at edge)
+//   ALT+SHIFT + ←/→     cycle sessions
+//   ALT+SHIFT + P       session picker (fuzzy)
+//   LEADER (ALT+Z)      tab ops + pane splits  (least frequent)
+//
+// Layouts:  ~/.config/zellij/layouts/project.kdl  (2-tab: agent + shell)
+//           ~/.config/zellij/layouts/launcher.kdl  (help panel)
+//
+// Session launcher: zj  (see scripts/zj.sh — symlink to ~/bin/zj)
+// ─────────────────────────────────────────────────────────────────────────────
+
+default_shell "bash"
+mouse_mode true
+scroll_buffer_size 20000
+copy_on_select false
+pane_frames false
+theme "crimson-noir"
+default_layout "project"
+
+// ── Keybindings ───────────────────────────────────────────────────────────────
+keybinds clear-defaults=true {
+
+    // shared_except "locked" catches all modes so LEADER always works
+    shared_except "locked" {
+        bind "Alt z" { SwitchToMode "leader"; }
+    }
+
+    normal {
+        // ── Pane navigation — wraps to adjacent tab at edge ───────────────
+        bind "Alt Left"  { MoveFocusOrTab "Left"; }
+        bind "Alt Right" { MoveFocusOrTab "Right"; }
+        bind "Alt Up"    { MoveFocusOrTab "Up"; }
+        bind "Alt Down"  { MoveFocusOrTab "Down"; }
+
+        // ── Session management ────────────────────────────────────────────
+        bind "Alt p"           { LaunchOrFocusPlugin "session-manager" { floating true; move_to_focused_tab true; }; }
+        bind "Alt Shift Left"  { RunCommand { command "bash"; args "-c" "$HOME/.config/zellij/scripts/switch-session.sh prev"; close_on_exit true; floating true; }; }
+        bind "Alt Shift Right" { RunCommand { command "bash"; args "-c" "$HOME/.config/zellij/scripts/switch-session.sh next"; close_on_exit true; floating true; }; }
+
+        // ── Copy / paste / fullscreen ─────────────────────────────────────
+        bind "Ctrl Shift c" { Copy; }
+        bind "Ctrl Shift v" { Paste; }
+        bind "Ctrl Shift f" { ToggleFullscreenMode; }
+    }
+
+    // ── LEADER mode — entered via ALT+Z ──────────────────────────────────────
+    leader {
+        bind "Esc" "Alt z" { SwitchToMode "Normal"; }
+
+        // Tab ops (least frequent)
+        bind "n" { NewTab; SwitchToMode "Normal"; }
+        bind "w" { CloseTab; SwitchToMode "Normal"; }
+
+        // Pane splits
+        bind "\\" { NewPane "Right"; SwitchToMode "Normal"; }
+        bind "-"  { NewPane "Down";  SwitchToMode "Normal"; }
+
+        // Pane ops
+        bind "z" { ToggleFocusFullscreen; SwitchToMode "Normal"; }
+        bind "c" { SwitchToMode "Scroll"; }
+    }
+
+    // ── Scroll / copy mode ────────────────────────────────────────────────────
+    scroll {
+        bind "Esc" "q"    { SwitchToMode "Normal"; }
+        bind "Enter"      { SwitchToMode "Normal"; }
+        bind "j"          { ScrollDown; }
+        bind "k"          { ScrollUp; }
+        bind "Ctrl d"     { HalfPageScrollDown; }
+        bind "Ctrl u"     { HalfPageScrollUp; }
+        bind "Ctrl f"     { PageScrollDown; }
+        bind "Ctrl b"     { PageScrollUp; }
+        bind "/"          { SwitchToMode "EnterSearch"; SearchInput 0; }
+        bind "e"          { EditScrollback; SwitchToMode "Normal"; }
+    }
+
+    entersearch {
+        bind "Enter" { SwitchToMode "Search"; }
+        bind "Esc"   { SwitchToMode "Scroll"; }
+    }
+
+    search {
+        bind "Esc" "q"  { SwitchToMode "Normal"; }
+        bind "n"        { Search "down"; }
+        bind "N" "p"    { Search "up"; }
+        bind "c"        { SearchToggleOption "CaseSensitivity"; }
+    }
+
+    locked {
+        bind "Alt z" { SwitchToMode "Normal"; }
+    }
+}
+
+// ── Status bar layout ─────────────────────────────────────────────────────────
+// compact-bar shows: mode | session | tabs | time
+// For a custom WezTerm-style bar (session list on left, clock on right),
+// install zjstatus: https://github.com/dj95/zjstatus
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:compact-bar"
+        }
+        children
+    }
+}
+
+// ── Theme — Crimson Noir ──────────────────────────────────────────────────────
+themes {
+    crimson-noir {
+        fg "#edd9f5"
+        bg "#0e0014"
+        black "#200030"
+        red "#c4185c"
+        green "#1f8c5a"
+        yellow "#b87333"
+        blue "#2a6fa8"
+        magenta "#8b1aaa"
+        cyan "#2a7a8c"
+        white "#c8b8d8"
+        orange "#d4943a"
+    }
+}

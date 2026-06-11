@@ -1,0 +1,17 @@
+// launcher.kdl — help panel + shell (opened ad-hoc, not the default layout)
+//
+// Left pane: live keybinding reference (auto-redraws on file save)
+// Right pane: plain shell for orchestration
+//
+// Open via: zellij --layout launcher  (or LEADER+N then manually)
+
+layout {
+    tab name="launcher" focus=true {
+        pane split_direction="vertical" {
+            pane size="50%" command="bash" {
+                args "-lc" "~/.config/zellij/scripts/help.sh"
+            }
+            pane
+        }
+    }
+}

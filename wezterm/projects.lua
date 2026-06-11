@@ -92,4 +92,13 @@ return {
       { title = "shell", cmd = nil, layout = "vsplit", resume = false },
     },
   },
+  {
+    id    = "vibesort",
+    label = "Vibesort",
+    cwd   = "D:/repo/web/vibesort",
+    tabs  = {
+      { title = "agent", cmd = "claude --continue; exec bash", layout = "none", resume = true },
+      { title = "shell", cmd = nil, layout = "vsplit", resume = false },
+    },
+  },
 }
